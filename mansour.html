@@ -169,6 +169,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 }
 .sum-row.total .amt{color:var(--accent-dark);}
 
+/* ---------- 결제수단 선택 ---------- */
+.pay-tabs{display:flex;gap:10px;margin-bottom:14px;}
+.pay-tab{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  border:1.5px solid var(--line);border-radius:10px;padding:12px;
+  cursor:pointer;font-weight:700;font-size:14px;color:var(--sub);
+}
+.pay-tab input{width:16px;height:16px;accent-color:var(--accent);}
+.pay-tab.on{border-color:var(--accent);color:var(--accent-dark);background:var(--soft);}
+
 /* ---------- 완료 화면 ---------- */
 #screenDone{display:none;text-align:center;padding-top:30px;}
 .done-check{
@@ -243,7 +253,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       </div>
 
       <div class="notice-block">
-        <div class="nb-title">❤️ 입금 계좌</div>
+        <div class="nb-title">❤️ 결제 안내</div>
         <div class="acct">
           <div>
             <div class="num">3333-18-3356907</div>
@@ -251,7 +261,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
           </div>
           <button class="btn-copy" onclick="copyAcct(this)">복사</button>
         </div>
-        <p class="muted" style="margin-top:8px;">✔️ 반드시 <b>닉네임으로 입금</b>해주세요.</p>
+        <p class="muted" style="margin-top:8px;">✔️ 계좌이체는 반드시 <b>닉네임으로 입금</b>해주세요. 카드결제도 가능합니다 (다음 단계에서 선택).</p>
       </div>
 
       <label class="agree">
@@ -291,7 +301,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       <p id="freeMsg" style="display:none;margin-top:14px;font-size:14px;font-weight:700;color:var(--accent-dark);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;">🎉 15만원 이상 구매로 배송비가 무료입니다</p>
 
       <div class="sum-row"><span>배송비</span><b id="sumShip">4,000원</b></div>
-      <div class="sum-row total"><span>총 입금 금액</span><span class="amt" id="sumTotal">0원</span></div>
+      <div class="sum-row total"><span>총 결제 금액</span><span class="amt" id="sumTotal">0원</span></div>
     </div>
 
     <div class="card">
@@ -313,6 +323,14 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       <input type="text" id="cAddr" placeholder="주소 검색을 눌러 선택해주세요" readonly style="margin-top:8px;">
       <input type="text" id="cAddr2" placeholder="상세주소 (동·호수 등)" style="margin-top:8px;">
 
+      <!-- 주소검색 레이어 (새 창 팝업 대신 페이지 안에서 바로 뜸 - 모바일에서 더 안정적) -->
+      <div id="postcodeWrap" style="display:none;position:fixed;inset:0;z-index:999;background:#fff;">
+        <div style="display:flex;justify-content:flex-end;padding:10px 14px;border-bottom:1px solid var(--line);">
+          <button type="button" onclick="closePostcode()" style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink);">✕</button>
+        </div>
+        <div id="postcodeLayer" style="width:100%;height:calc(100% - 44px);"></div>
+      </div>
+
       <label class="fld">배송메모 (선택)</label>
       <input type="text" id="cMemo" placeholder="예) 문 앞에 놓아주세요">
 
@@ -321,15 +339,35 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
     </div>
 
     <div class="card">
-      <h2>💳 결제 정보</h2>
-      <div class="acct">
-        <div>
-          <div class="num">3333-18-3356907</div>
-          <div class="bank">카카오뱅크 · 김푸름</div>
-        </div>
-        <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+      <h2>💳 결제 방법</h2>
+
+      <div class="pay-tabs">
+        <label class="pay-tab on" id="payTabBank">
+          <input type="radio" name="payMethod" value="bank" id="payBank" checked onchange="onPayMethodChange()"> 계좌이체
+        </label>
+        <label class="pay-tab" id="payTabCard">
+          <input type="radio" name="payMethod" value="card" id="payCard" onchange="onPayMethodChange()"> 카드결제
+        </label>
       </div>
-      <p class="muted" style="margin-top:8px;">✔️ 위 <b>총 입금 금액</b>을 <b>닉네임으로</b> 입금해주세요.</p>
+
+      <div id="bankBox">
+        <div class="acct">
+          <div>
+            <div class="num">3333-18-3356907</div>
+            <div class="bank">카카오뱅크 · 김푸름</div>
+          </div>
+          <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+        </div>
+        <p class="muted" style="margin-top:8px;">✔️ 위 <b>총 결제 금액</b>을 <b>닉네임으로</b> 입금해주세요.</p>
+      </div>
+
+      <div id="cardBox" style="display:none;">
+        <p class="muted" style="line-height:1.7;font-size:13.5px;">
+          💳 아래 <b>주문하기</b> 버튼을 누르면 카드결제창이 새로 열립니다.<br>
+          결제창에서 카드정보를 입력해 결제를 완료해주세요.<br>
+          결제창이 뜨지 않으면 브라우저의 <b>팝업 차단</b>을 해제한 뒤 다시 시도해주세요.
+        </p>
+      </div>
     </div>
 
     <div class="card">
@@ -347,16 +385,19 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
     <h2>주문이 완료되었습니다</h2>
     <p class="sub">르미에 주문이 정상적으로 접수되었습니다.</p>
     <div class="done-amount">
-      <div class="lbl">이번 주문 입금 금액</div>
+      <div class="lbl">이번 주문 결제 금액</div>
       <div class="amt" id="doneAmt">0원</div>
     </div>
-    <div class="acct" style="margin-bottom:16px;">
+    <div class="acct" id="doneBankBox" style="margin-bottom:16px;">
       <div>
         <div class="num">3333-18-3356907</div>
         <div class="bank">카카오뱅크 · 김푸름 (닉네임으로 입금)</div>
       </div>
       <button class="btn-copy" onclick="copyAcct(this)">복사</button>
     </div>
+    <p class="muted" id="doneCardMsg" style="display:none;margin-bottom:16px;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;">
+      💳 새로 열린 카드결제창에서 결제를 완료해주세요.<br>결제창이 보이지 않으면 팝업 차단을 해제한 후 다시 시도해주세요.
+    </p>
     <a class="btn btn-outline" href="lookup.html" style="text-decoration:none;margin-bottom:10px;">📋 내 주문 조회</a>
     <button class="btn btn-outline" onclick="location.reload()">＋ 추가 주문하기</button>
     <p class="test-note" id="testNote">※ 구글시트 연동 전 테스트 모드입니다. 주문이 실제로 전송되지 않았습니다.</p>
@@ -373,16 +414,17 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
    ================================================================ */
 const CONFIG = {
   // 구글시트 연동용 Apps Script 웹앱 URL
-  // - appsscript_추가코드.gs 대로 기존 스크립트에 바로 코드를 추가하셨다면
-  //   → 기존 주소를 그대로 쓰시면 됩니다 (아래 주소가 기존 주소입니다).
-  // - 혹시 원본을 안 건드리고 "사본"에서 작업하셨다면
-  //   → 그 사본에서 새로 배포한 웹앱 주소로 바꿔주세요.
   SHEET_URL: "https://script.google.com/macros/s/AKfycbzIxByd7ERcc4CZ6821LJvIkT0Gw4qWQLsgmkQo1gdNkSMhtHseSpNirr6c3qYD9cTm/exec",
   // 상품 목록을 불러올 때 서버(Apps Script)에 보내는 모드 값
-  // Apps Script의 doGet에서 이 값을 보고 "만수르창고" 탭을 읽도록 처리해야 합니다 (안내 문서 참고)
   PRODUCT_MODE: "recommend",
   // 이 금액(원) 이상 구매 시 무료배송
   FREE_SHIP_MIN: 150000,
+
+  // ▼▼▼ 카드결제(페이앱) 설정 — 반드시 본인 정보로 바꿔주세요 ▼▼▼
+  // 페이앱 로그인 아이디 (판매자 ID). seller.payapp.kr 로그인 아이디와 동일합니다.
+  PAYAPP_USERID: "lumie54",
+  // 결제창에 표시될 상점명 (자유롭게 입력)
+  PAYAPP_SHOPNAME: "르미에",
 };
 
 /* ================================================================
@@ -400,6 +442,49 @@ function copyAcct(btn){
   });
 }
 
+/* ---------- 페이앱(카드결제) 모듈 ---------- */
+let payappLoading = false;
+function loadPayAppScript(){
+  if(window.PayApp || payappLoading) return;
+  payappLoading = true;
+  const sc = document.createElement("script");
+  sc.src = "https://lite.payapp.kr/public/api/v2/payapp-lite.js";
+  sc.onload = ()=>{
+    try{
+      PayApp.setDefault('userid', CONFIG.PAYAPP_USERID);
+      PayApp.setDefault('shopname', CONFIG.PAYAPP_SHOPNAME);
+    }catch(e){ console.error("PayApp 초기화 실패", e); }
+  };
+  sc.onerror = ()=>{
+    payappLoading = false;
+    console.error("페이앱 결제 모듈을 불러오지 못했습니다.");
+  };
+  document.body.appendChild(sc);
+}
+function onPayMethodChange(){
+  const method = document.querySelector('input[name=payMethod]:checked').value;
+  $("bankBox").style.display = method === "bank" ? "block" : "none";
+  $("cardBox").style.display = method === "card" ? "block" : "none";
+  $("payTabBank").classList.toggle("on", method === "bank");
+  $("payTabCard").classList.toggle("on", method === "card");
+  if(method === "card") loadPayAppScript();
+}
+// 결제창을 반드시 "클릭 이벤트 안에서 동기적으로" 열어야 팝업이 차단되지 않습니다.
+function launchCardPayment(order){
+  if(!window.PayApp){
+    alert("카드결제 모듈을 아직 불러오는 중입니다. 잠시 후(1~2초) 다시 시도해주세요.");
+    return false;
+  }
+  let goodname = order.items;
+  if(goodname.length > 40) goodname = goodname.slice(0, 40) + " 외";
+  PayApp.setParam('goodname', goodname);
+  PayApp.setParam('price', String(order.total));
+  PayApp.setParam('recvphone', order.phone.replace(/[^0-9]/g, ""));
+  PayApp.setParam('var1', order.nick);
+  PayApp.payrequest();
+  return true;
+}
+
 function startOrder(){
   $("screenGate").style.display = "none";
   $("screenOrder").style.display = "block";
@@ -407,6 +492,7 @@ function startOrder(){
   loadProducts();                          // 시트에서 최신 상품/재고 불러오기
   setInterval(()=>loadProducts(true), 30000);  // 30초마다 자동 갱신
   loadSaved();
+  loadPayAppScript();                      // 카드결제 모듈 미리 로딩 (선택 시 지연 없도록)
   window.scrollTo(0,0);
 }
 
@@ -600,7 +686,10 @@ function renderSummary(){
     `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}<br><b>합계 ${fmt(goodsTotal()+shipFee())}</b>`;
 }
 
-/* ---------- 주소 검색 (다음 우편번호) ---------- */
+/* ---------- 주소 검색 (다음 우편번호) ----------
+   새 창(팝업)으로 띄우면 일부 모바일/브라우저에서 주소를 클릭해도
+   부모 페이지로 값이 안 넘어오는 문제가 있어, 페이지 안에 바로 뜨는
+   레이어(embed) 방식으로 띄웁니다. ------------------------------------ */
 let postcodeLoaded = false;
 function openPostcode(){
   if(postcodeLoaded){ runPostcode(); return; }
@@ -617,13 +706,22 @@ function openPostcode(){
   document.body.appendChild(sc);
 }
 function runPostcode(){
+  $("postcodeWrap").style.display = "block";
+  $("postcodeLayer").innerHTML = "";
   new daum.Postcode({
     oncomplete: d => {
       $("cZip").value = d.zonecode;
       $("cAddr").value = d.roadAddress || d.jibunAddress;
+      closePostcode();
       $("cAddr2").focus();
-    }
-  }).open();
+    },
+    width: "100%",
+    height: "100%",
+  }).embed($("postcodeLayer"));
+}
+function closePostcode(){
+  $("postcodeWrap").style.display = "none";
+  $("postcodeLayer").innerHTML = "";
 }
 
 /* ---------- 고객정보 저장 ---------- */
@@ -660,6 +758,11 @@ async function submitOrder(){
   for(const [id,label] of need){
     if(!$(id).value.trim()){ alert(label + "을(를) 입력해주세요."); $(id).focus(); return; }
   }
+  const payMethod = document.querySelector('input[name=payMethod]:checked').value;
+  if(payMethod === "card" && !window.PayApp){
+    alert("카드결제 모듈을 아직 불러오는 중입니다. 잠시 후(1~2초) 다시 시도해주세요.");
+    return;
+  }
   if(isAddl() && localStorage.getItem("lumie_last_order") !== todayStr()){
     if(!confirm("배송비가 '추가 주문 (배송비 없음)'으로 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 주문할까요?")) return;
   }
@@ -679,8 +782,15 @@ async function submitOrder(){
     goods: goodsTotal(),
     ship: shipFee(),
     total: goodsTotal()+shipFee(),
+    paymethod: payMethod === "card" ? "카드결제" : "계좌이체",
     agree: "교환·반품 불가 규정 동의",
   };
+
+  // 카드결제는 팝업 차단을 피하기 위해 클릭 이벤트 안에서 "가장 먼저"(await 전에) 결제창을 엽니다.
+  if(payMethod === "card"){
+    const opened = launchCardPayment(order);
+    if(!opened){ submitting = false; return; }
+  }
 
   $("loading").classList.add("show");
   let sent = false;
@@ -702,6 +812,8 @@ async function submitOrder(){
     return;
   }
   $("doneAmt").textContent = fmt(order.total);
+  $("doneBankBox").style.display = payMethod === "card" ? "none" : "flex";
+  $("doneCardMsg").style.display = payMethod === "card" ? "block" : "none";
   try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
   if(!CONFIG.SHEET_URL) $("testNote").style.display = "block";
   $("screenOrder").style.display = "none";
