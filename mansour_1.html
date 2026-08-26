@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#B08D57">
+<title>르미에 주문서 입력 (만수르창고)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5EFE6;
+  --card:#FFFFFF;
+  --soft:#FBF7F0;
+  --ink:#3E332A;
+  --sub:#8A7A68;
+  --accent:#B08D57;
+  --accent-dark:#8F6F3F;
+  --line:#E5DACB;
+  --danger:#B3402E;
+  --ok:#4E7A4E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:"Pretendard",-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);color:var(--ink);
+  line-height:1.55;font-size:15px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px;}
+.brand{text-align:center;padding:26px 0 18px;}
+.brand .logo{
+  font-family:"Cormorant Garamond",serif;font-style:italic;
+  font-size:40px;font-weight:600;color:var(--accent-dark);letter-spacing:1px;
+}
+.brand .name{font-size:13px;letter-spacing:6px;color:var(--sub);margin-top:2px;}
+.brand .divider{width:36px;height:2px;background:var(--accent);margin:14px auto 0;border-radius:2px;}
+h1.page-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:20px;}
+
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:20px 18px;margin-bottom:16px;
+  box-shadow:0 1px 4px rgba(62,51,42,.05);
+}
+.card h2{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.card h2 .tag{
+  font-size:11px;font-weight:600;color:var(--accent-dark);
+  background:var(--soft);border:1px solid var(--line);
+  border-radius:20px;padding:2px 9px;letter-spacing:1px;
+}
+
+/* ---------- 안내 게이트 ---------- */
+.notice-danger{
+  background:#FBF3F1;border:1px solid #E7C8C0;border-radius:12px;
+  padding:16px 15px;margin-bottom:14px;
+}
+.notice-danger .nd-title{font-size:15px;font-weight:800;color:var(--danger);margin-bottom:8px;}
+.notice-danger ul{list-style:none;}
+.notice-danger li{padding-left:16px;position:relative;margin-bottom:4px;font-size:14px;}
+.notice-danger li::before{content:"·";position:absolute;left:4px;color:var(--danger);font-weight:800;}
+.notice-block{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;}
+.notice-block .nb-title{font-weight:700;margin-bottom:8px;font-size:14px;}
+.notice-block p{font-size:13.5px;color:var(--ink);margin-bottom:6px;}
+.notice-block p:last-child{margin-bottom:0;}
+.row-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px;}
+.row-line:last-child{border-bottom:none;}
+.row-line b{font-weight:700;}
+.muted{color:var(--sub);font-size:12.5px;}
+.acct{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:12px;margin-top:8px;
+}
+.acct .num{font-weight:800;font-size:15.5px;letter-spacing:.3px;}
+.acct .bank{font-size:12.5px;color:var(--sub);}
+.btn-copy{
+  flex-shrink:0;border:1px solid var(--accent);background:#fff;color:var(--accent-dark);
+  font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 12px;cursor:pointer;
+}
+.btn-copy:active{background:var(--soft);}
+.agree{
+  display:flex;align-items:center;gap:10px;justify-content:center;
+  padding:14px 0 4px;font-size:14.5px;font-weight:600;cursor:pointer;user-select:none;
+}
+.agree input{width:19px;height:19px;accent-color:var(--accent);}
+
+/* ---------- 공통 버튼/입력 ---------- */
+.btn{
+  display:block;width:100%;text-align:center;border:none;cursor:pointer;
+  border-radius:12px;padding:15px;font-size:16px;font-weight:700;
+  font-family:inherit;transition:opacity .15s;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active:not(:disabled){background:var(--accent-dark);}
+.btn-outline{background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);}
+.btn-ghost{background:none;color:var(--sub);font-size:13px;padding:10px;text-decoration:underline;}
+label.fld{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12px 0 5px;}
+label.fld:first-of-type{margin-top:0;}
+input[type=text],input[type=tel],input[type=number],select,textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:12px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);
+  appearance:none;-webkit-appearance:none;
+}
+select{
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7A68' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+.inline{display:flex;gap:8px;}
+.inline > *{flex:1;}
+.inline .fit{flex:0 0 auto;}
+
+/* ---------- 상품 검색 ---------- */
+.search-row{display:flex;gap:8px;}
+.search-row input{flex:1;}
+.btn-search{
+  flex:0 0 auto;background:var(--ink);color:#fff;border:none;border-radius:10px;
+  padding:0 20px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.hint{font-size:12.5px;color:var(--sub);margin-top:7px;}
+
+/* ---------- 상품 카탈로그 ---------- */
+.pitem{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;}
+.pitem.sold{opacity:.55;}
+.pitem-top{display:flex;gap:12px;}
+.pitem .thumb{
+  width:76px;height:76px;flex-shrink:0;border-radius:10px;object-fit:cover;
+  background:#EDE7DE;border:1px solid var(--line);
+}
+.pitem .thumb.broken{display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--sub);}
+.pitem .info{flex:1;min-width:0;}
+.pitem .no{font-size:11.5px;font-weight:800;color:var(--accent-dark);}
+.pitem .nm{font-weight:700;font-size:14px;line-height:1.4;margin-top:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.pitem .pr{margin-top:5px;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
+.pitem .now{font-size:16.5px;font-weight:800;color:var(--accent-dark);}
+.badge{display:inline-block;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:5px;}
+.b1{background:#B3402E;color:#fff;}
+.pitem .act{display:flex;gap:8px;align-items:center;margin-top:10px;}
+.pitem .act button.add{flex:1;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pitem .act button.add:disabled{background:#C9BEB0;cursor:not-allowed;}
+.qb{width:34px;height:34px;border:1px solid var(--line);background:#fff;font-size:16px;cursor:pointer;border-radius:8px;color:var(--ink);flex-shrink:0;}
+.qv{width:32px;text-align:center;font-weight:700;font-size:14px;flex-shrink:0;}
+.more{text-align:center;padding:12px;color:var(--accent-dark);font-weight:700;font-size:14px;cursor:pointer;border:1px dashed var(--line);border-radius:10px;}
+
+/* ---------- 주문 목록 ---------- */
+.cart-empty{color:var(--sub);text-align:center;padding:16px 0;font-size:14px;}
+.cart-item{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  padding:12px 0;border-bottom:1px dashed var(--line);
+}
+.cart-item:last-of-type{border-bottom:1px solid var(--line);}
+.ci-name{font-weight:700;font-size:14.5px;}
+.ci-opt{font-size:12.5px;color:var(--sub);margin-top:2px;}
+.ci-price{font-weight:700;white-space:nowrap;font-size:14.5px;}
+.ci-del{
+  background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;
+  text-decoration:underline;padding:2px 0;margin-top:3px;
+}
+.ci-qty{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.ci-qty .qb{width:30px;height:30px;font-size:15px;}
+.ci-qty .qv{min-width:26px;text-align:center;font-weight:700;font-size:14px;}
+.ci-qty .ci-del{margin-top:0;margin-left:6px;}
+.sum-row{display:flex;justify-content:space-between;padding:9px 0 0;font-size:14.5px;}
+.sum-row.total{
+  margin-top:8px;padding-top:12px;border-top:2px solid var(--ink);
+  font-size:16.5px;font-weight:800;
+}
+.sum-row.total .amt{color:var(--accent-dark);}
+
+/* ---------- 결제수단 선택 ---------- */
+.pay-tabs{display:flex;gap:10px;margin-bottom:14px;}
+.pay-tab{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+  border:1.5px solid var(--line);border-radius:10px;padding:12px;
+  cursor:pointer;font-weight:700;font-size:14px;color:var(--sub);
+}
+.pay-tab input{width:16px;height:16px;accent-color:var(--accent);}
+.pay-tab.on{border-color:var(--accent);color:var(--accent-dark);background:var(--soft);}
+
+/* ---------- 완료 화면 ---------- */
+#screenDone{display:none;text-align:center;padding-top:30px;}
+.done-check{
+  width:64px;height:64px;border-radius:50%;background:var(--accent);
+  color:#fff;font-size:30px;line-height:64px;margin:0 auto 18px;
+}
+#screenDone h2{font-size:20px;margin-bottom:8px;}
+#screenDone .sub{color:var(--sub);font-size:14px;margin-bottom:20px;}
+.done-amount{
+  background:var(--soft);border:1px solid var(--line);border-radius:12px;
+  padding:16px;margin-bottom:10px;
+}
+.done-amount .lbl{font-size:13px;color:var(--sub);}
+.done-amount .amt{font-size:26px;font-weight:800;color:var(--accent-dark);margin-top:2px;}
+.test-note{font-size:12px;color:var(--danger);margin-top:10px;display:none;}
+
+#screenOrder{display:none;}
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(62,51,42,.45);
+  z-index:50;align-items:center;justify-content:center;
+}
+.overlay.show{display:flex;}
+.overlay .box{background:#fff;border-radius:14px;padding:22px 26px;font-weight:700;}
+footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="logo">lumie</div>
+    <div class="name">르 미 에</div>
+    <div class="divider"></div>
+  </div>
+
+  <!-- ============ 화면 1 : 안내 게이트 ============ -->
+  <div id="screenGate">
+        <div class="card">
+      <div class="notice-block" style="background:#FBF3F1;border:1.5px solid #E7C8C0;">
+        <div class="nb-title" style="color:var(--danger);">📦 배송 안내 (필독)</div>
+        <p>이번 방송 상품은 <b>배송까지 약 10일 정도</b> 소요됩니다.<br>여유 있게 기다려주시면 정성껏 보내드리겠습니다. 🙏</p>
+      </div>
+
+      <div class="notice-danger">
+        <div class="nd-title">🚫 반품 / 교환 및 CS 안내</div>
+        <p style="font-size:13px;margin-bottom:8px;">도매 중개 거래 특성상 아래 규정이 적용되오니 신중한 구매 바랍니다.</p>
+        <ul>
+          <li><b>교환 / 반품 절대 불가</b></li>
+        </ul>
+        <p style="font-size:14.5px;font-weight:800;color:var(--danger);background:#fff;border:1.5px solid #E7C8C0;border-radius:10px;padding:12px;margin-top:10px;line-height:1.6;">
+          라이브방송 상품은 수령 후 <u>교환 · 반품이 불가</u>합니다.<br>
+          <span style="display:block;margin-top:8px;font-size:13.5px;font-weight:700;">단순 변심, 맛·향에 대한 개인차, 포장 겉면의 미세한 눌림 등은<br>교환 · 반품 사유가 되지 않습니다.</span>
+        </p>
+        <ul style="margin-top:10px;">
+          <li>취소는 <b>방송 중 '댓글'로만</b> 가능하며, 종료 후 변경·취소는 불가합니다.</li>
+          <li>상품의 중대한 하자 · 오배송은 <b>수령 후 24시간 이내</b> 사진과 함께 채널로 문의해주세요.</li>
+        </ul>
+        <p style="font-size:12.5px;margin-top:8px;color:var(--danger);">⚠️ 예민하신 분은 오프라인 구매를 권장합니다.</p>
+      </div>
+
+      <div class="notice-block">
+        <div class="nb-title">💬 문의 안내</div>
+        <p>메시지를 계속 보내시면 순서가 뒤로 밀려 답변이 늦어집니다. 순차 답변드리니 기다려주세요. 🙏</p>
+        <p>방송 중에는 <b>주문 / 입금 확인만</b> 진행하며, 배송 등 일반 CS 업무는 불가한 점 양해 부탁드립니다.</p>
+      </div>
+
+      <div class="notice-block">
+        <div class="nb-title">🚚 배송비 안내</div>
+        <div class="row-line"><span>기본 배송비</span><b>4,000원</b></div>
+        <div class="row-line"><span>제주 및 도서산간</span><b>7,000원</b></div>
+        <div class="row-line"><span>15만원 이상 구매 시</span><b style="color:var(--accent-dark);">무료배송 🎉</b></div>
+      </div>
+
+      <div class="notice-block">
+        <div class="nb-title">❤️ 결제 안내</div>
+        <div class="acct">
+          <div>
+            <div class="num">3333-18-3356907</div>
+            <div class="bank">카카오뱅크 · 김푸름</div>
+          </div>
+          <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+        </div>
+        <p class="muted" style="margin-top:8px;">✔️ 계좌이체는 반드시 <b>닉네임으로 입금</b>해주세요. 카드결제도 가능합니다 (다음 단계에서 선택).</p>
+      </div>
+
+      <label class="agree">
+        <input type="checkbox" id="agreeChk" onchange="document.getElementById('btnStart').disabled=!this.checked">
+        위 내용을 모두 확인했습니다.
+      </label>
+    </div>
+
+    <button class="btn btn-primary" id="btnStart" disabled onclick="startOrder()">주문서 작성하기</button>
+  </div>
+
+  <!-- ============ 화면 2 : 주문서 ============ -->
+  <div id="screenOrder">
+
+    <div class="card">
+      <h2>🎁 상품 담기</h2>
+      <input type="text" id="q" placeholder="🔍 번호 입력 (예: 2) 또는 상품명 검색" oninput="renderList()" style="font-size:15px;">
+      <p class="hint" id="cnt"></p>
+      <div id="list" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>🛒 주문 목록</h2>
+      <div id="cartList"><div class="cart-empty">담긴 상품이 없습니다.</div></div>
+
+      <div class="sum-row"><span>총 상품 수</span><b id="sumCount">0개</b></div>
+      <div class="sum-row"><span>상품 금액</span><b id="sumGoods">0원</b></div>
+
+      <div id="shipWrap">
+        <label class="fld" style="margin-top:14px;">배송비</label>
+        <select id="selShip" onchange="renderCart()">
+          <option value="4000">기본 배송 (4,000원)</option>
+          <option value="7000">제주 및 도서산간 (7,000원)</option>
+          <option value="0">추가 주문 — 오늘 이미 주문한 경우만 (배송비 없음)</option>
+        </select>
+      </div>
+      <p id="freeMsg" style="display:none;margin-top:14px;font-size:14px;font-weight:700;color:var(--accent-dark);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;">🎉 15만원 이상 구매로 배송비가 무료입니다</p>
+
+      <div class="sum-row"><span>배송비</span><b id="sumShip">4,000원</b></div>
+      <div class="sum-row total"><span>총 결제 금액</span><span class="amt" id="sumTotal">0원</span></div>
+    </div>
+
+    <div class="card">
+      <h2>👤 주문자 정보</h2>
+      <p class="hint" id="savedHint" style="display:none;margin:0 0 10px;color:var(--ok);">✓ 저장된 고객정보를 불러왔습니다. 추가 주문은 상품만 담으면 됩니다.</p>
+
+      <label class="fld">닉네임 <span class="muted">(입금자명과 동일하게)</span></label>
+      <input type="text" id="cNick" placeholder="라이브 방송 닉네임">
+
+      <label class="fld">수령인 성함</label>
+      <input type="text" id="cName" placeholder="받으시는 분 성함">
+
+      <label class="fld">연락처</label>
+      <input type="tel" id="cPhone" inputmode="tel" placeholder="010-0000-0000">
+
+      <label class="fld">주소</label>
+      <input type="hidden" id="cZip">
+      <button class="btn btn-outline" style="padding:12px;font-size:14.5px;" onclick="openPostcode()">📍 주소 검색</button>
+      <input type="text" id="cAddr" placeholder="주소 검색을 눌러 선택해주세요" readonly style="margin-top:8px;">
+      <input type="text" id="cAddr2" placeholder="상세주소 (동·호수 등)" style="margin-top:8px;">
+
+      <label class="fld">배송메모 (선택)</label>
+      <input type="text" id="cMemo" placeholder="예) 문 앞에 놓아주세요">
+
+      <label class="fld">요청사항 (선택)</label>
+      <input type="text" id="cReq" placeholder="예) 문의사항, 함께 배송 요청 등">
+    </div>
+
+    <div class="card">
+      <h2>💳 결제 방법</h2>
+
+      <div class="pay-tabs">
+        <label class="pay-tab on" id="payTabBank">
+          <input type="radio" name="payMethod" value="bank" id="payBank" checked onchange="onPayMethodChange()"> 계좌이체
+        </label>
+        <label class="pay-tab" id="payTabCard">
+          <input type="radio" name="payMethod" value="card" id="payCard" onchange="onPayMethodChange()"> 카드결제
+        </label>
+      </div>
+
+      <div id="bankBox">
+        <div class="acct">
+          <div>
+            <div class="num">3333-18-3356907</div>
+            <div class="bank">카카오뱅크 · 김푸름</div>
+          </div>
+          <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+        </div>
+        <p class="muted" style="margin-top:8px;">✔️ 위 <b>총 결제 금액</b>을 <b>닉네임으로</b> 입금해주세요.</p>
+      </div>
+
+      <div id="cardBox" style="display:none;">
+        <p class="muted" style="line-height:1.7;font-size:13.5px;">
+          💳 아래 <b>주문하기</b> 버튼을 누르면 카드결제창이 새로 열립니다.<br>
+          결제창에서 카드정보를 입력해 결제를 완료해주세요.<br>
+          결제창이 뜨지 않으면 브라우저의 <b>팝업 차단</b>을 해제한 뒤 다시 시도해주세요.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧾 구매 내역 <span class="tag">자동</span></h2>
+      <div id="summaryBox" class="muted">상품을 담으면 구매내역이 자동으로 표시됩니다.</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="submitOrder()">✈ 주문하기</button>
+    <button class="btn btn-ghost" onclick="clearSaved()">↻ 저장된 고객정보 지우기</button>
+  </div>
+
+  <!-- ============ 화면 3 : 완료 ============ -->
+  <div id="screenDone">
+    <div class="done-check">✓</div>
+    <h2>주문이 완료되었습니다</h2>
+    <p class="sub">르미에 주문이 정상적으로 접수되었습니다.</p>
+    <div class="done-amount">
+      <div class="lbl">이번 주문 결제 금액</div>
+      <div class="amt" id="doneAmt">0원</div>
+    </div>
+    <div class="acct" id="doneBankBox" style="margin-bottom:16px;">
+      <div>
+        <div class="num">3333-18-3356907</div>
+        <div class="bank">카카오뱅크 · 김푸름 (닉네임으로 입금)</div>
+      </div>
+      <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+    </div>
+    <p class="muted" id="doneCardMsg" style="display:none;margin-bottom:16px;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;">
+      💳 새로 열린 카드결제창에서 결제를 완료해주세요.<br>결제창이 보이지 않으면 팝업 차단을 해제한 후 다시 시도해주세요.
+    </p>
+    <a class="btn btn-outline" href="lookup.html" style="text-decoration:none;margin-bottom:10px;">📋 내 주문 조회</a>
+    <button class="btn btn-outline" onclick="location.reload()">＋ 추가 주문하기</button>
+    <p class="test-note" id="testNote">※ 구글시트 연동 전 테스트 모드입니다. 주문이 실제로 전송되지 않았습니다.</p>
+  </div>
+
+  <footer>LUMIE · 르미에</footer>
+</div>
+
+<div class="overlay" id="loading"><div class="box">처리 중입니다…</div></div>
+
+<script>
+/* ================================================================
+   ★ 설정 — 이 부분만 수정하면 됩니다
+   ================================================================ */
+const CONFIG = {
+  // 구글시트 연동용 Apps Script 웹앱 URL
+  SHEET_URL: "https://script.google.com/macros/s/AKfycbzIxByd7ERcc4CZ6821LJvIkT0Gw4qWQLsgmkQo1gdNkSMhtHseSpNirr6c3qYD9cTm/exec",
+  // 상품 목록을 불러올 때 서버(Apps Script)에 보내는 모드 값
+  PRODUCT_MODE: "recommend",
+  // 이 금액(원) 이상 구매 시 무료배송
+  FREE_SHIP_MIN: 150000,
+
+  // ▼▼▼ 카드결제(페이앱) 설정 — 반드시 본인 정보로 바꿔주세요 ▼▼▼
+  // 페이앱 로그인 아이디 (판매자 ID). seller.payapp.kr 로그인 아이디와 동일합니다.
+  PAYAPP_USERID: "lumie54",
+  // 결제창에 표시될 상점명 (자유롭게 입력)
+  PAYAPP_SHOPNAME: "르미에",
+};
+
+/* ================================================================
+   ★ 추천상품 주문서 — 구글시트 "추천상품" 탭에서 사진 포함 상품을 불러옵니다
+   ================================================================ */
+let cart = [];
+let submitting = false;
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString("ko-KR") + "원";
+
+function copyAcct(btn){
+  navigator.clipboard.writeText("3333-18-3356907").then(()=>{
+    const t = btn.textContent; btn.textContent = "복사됨✓";
+    setTimeout(()=>btn.textContent=t, 1500);
+  });
+}
+
+/* ---------- 페이앱(카드결제) 모듈 ---------- */
+let payappLoading = false;
+function loadPayAppScript(){
+  if(window.PayApp || payappLoading) return;
+  payappLoading = true;
+  const sc = document.createElement("script");
+  sc.src = "https://lite.payapp.kr/public/api/v2/payapp-lite.js";
+  sc.onload = ()=>{
+    try{
+      PayApp.setDefault('userid', CONFIG.PAYAPP_USERID);
+      PayApp.setDefault('shopname', CONFIG.PAYAPP_SHOPNAME);
+    }catch(e){ console.error("PayApp 초기화 실패", e); }
+  };
+  sc.onerror = ()=>{
+    payappLoading = false;
+    console.error("페이앱 결제 모듈을 불러오지 못했습니다.");
+  };
+  document.body.appendChild(sc);
+}
+function onPayMethodChange(){
+  const method = document.querySelector('input[name=payMethod]:checked').value;
+  $("bankBox").style.display = method === "bank" ? "block" : "none";
+  $("cardBox").style.display = method === "card" ? "block" : "none";
+  $("payTabBank").classList.toggle("on", method === "bank");
+  $("payTabCard").classList.toggle("on", method === "card");
+  if(method === "card") loadPayAppScript();
+}
+// 결제창을 반드시 "클릭 이벤트 안에서 동기적으로" 열어야 팝업이 차단되지 않습니다.
+function launchCardPayment(order){
+  if(!window.PayApp){
+    alert("카드결제 모듈을 아직 불러오는 중입니다. 잠시 후(1~2초) 다시 시도해주세요.");
+    return false;
+  }
+  let goodname = order.items;
+  if(goodname.length > 40) goodname = goodname.slice(0, 40) + " 외";
+  PayApp.setParam('goodname', goodname);
+  PayApp.setParam('price', String(order.total));
+  PayApp.setParam('recvphone', order.phone.replace(/[^0-9]/g, ""));
+  PayApp.setParam('var1', order.nick);
+  PayApp.payrequest();
+  return true;
+}
+
+function startOrder(){
+  $("screenGate").style.display = "none";
+  $("screenOrder").style.display = "block";
+  renderList();
+  loadProducts();                          // 시트에서 최신 상품/재고 불러오기
+  setInterval(()=>loadProducts(true), 30000);  // 30초마다 자동 갱신
+  loadSaved();
+  loadPayAppScript();                      // 카드결제 모듈 미리 로딩 (선택 시 지연 없도록)
+  window.scrollTo(0,0);
+}
+
+/* ---------- 구글시트 '만수르창고' 탭에서 상품 실시간 불러오기 ----------
+   기대하는 열(header) 구성: no | name | price | img | status(선택)
+   - no    : 상품 번호 (숫자)
+   - name  : 상품명
+   - price : 판매가 (숫자)
+   - img   : 상품 사진 경로 또는 URL (예: images/recommend/3.jpg)
+   - status: "품절" 이 포함되면 담기 버튼이 비활성화됩니다 (선택 항목)
+------------------------------------------------------------------ */
+async function loadProducts(silent){
+  if(!CONFIG.SHEET_URL) return false;
+  try{
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=" + CONFIG.PRODUCT_MODE + "&t=" + Date.now());
+    const data = await res.json();
+    if(Array.isArray(data) && data.length){
+      const list = [];
+      data.forEach(r => {
+        const no = Number(r.no) || 0;
+        if(!no) return;
+        list.push({
+          no,
+          name: String(r.name || "").replace(/^\s*\d+\.\s*/, ""),
+          price: Number(r.price) || 0,
+          img: String(r.img || "").trim(),
+          soldout: String(r.status || "").indexOf("품절") > -1,
+        });
+      });
+      list.sort((a,b)=>a.no-b.no);
+      PRODUCTS = list;
+      loaded = true;
+      if(!silent) renderList(false);
+      return true;
+    }
+  }catch(e){
+    console.error("상품 불러오기 실패", e);
+    if(!loaded){
+      $("list").innerHTML = "<p class='hint' style='text-align:center;padding:24px 0;color:var(--danger);'>상품을 불러오지 못했습니다.<br>네트워크 확인 후 새로고침해주세요.</p>";
+    }
+  }
+  return false;
+}
+
+let PRODUCTS = [];
+let loaded = false;
+let shown = 20;
+const qty = {};
+
+function chgQty(i, d){
+  qty[i] = Math.max(1, (qty[i] || 1) + d);
+  const el = document.getElementById("qv" + i);
+  if(el) el.textContent = qty[i];
+}
+
+function renderList(reset){
+  if(!loaded){
+    $("cnt").textContent = "";
+    $("list").innerHTML = "<p class='hint' style='text-align:center;padding:24px 0;'>상품을 불러오는 중입니다…</p>";
+    return;
+  }
+  if(reset !== false) shown = 20;
+  let q = $("q").value.trim().toLowerCase();
+  q = q.replace(/번$/, "").trim();          // "2번" → "2"
+  const isNum = /^\d+$/.test(q);
+
+  const hits = PRODUCTS.map((p,i)=>({p,i})).filter(x => {
+    if(!q) return true;
+    if(isNum) return String(x.p.no) === q;   // 번호는 정확히 일치할 때만
+    return x.p.name.toLowerCase().indexOf(q) > -1;
+  });
+
+  $("cnt").textContent = q ? ("검색 결과 " + hits.length + "개") : ("전체 " + PRODUCTS.length + "개 상품");
+  if(!hits.length){
+    $("list").innerHTML = "<p class='hint' style='text-align:center;padding:16px 0;'>검색 결과가 없습니다. 번호를 다시 확인해주세요.</p>";
+    return;
+  }
+
+  const view = hits.slice(0, shown);
+  $("list").innerHTML = view.map(x => {
+    const p = x.p, i = x.i;
+    const imgTag = p.img
+      ? `<img class="thumb" src="${p.img}" loading="lazy" alt="" onerror="this.outerHTML='<div class=&quot;thumb broken&quot;>사진 준비중</div>'">`
+      : `<div class="thumb broken">사진 준비중</div>`;
+    return `
+    <div class="pitem ${p.soldout ? "sold" : ""}">
+      <div class="pitem-top">
+        ${imgTag}
+        <div class="info">
+          <div class="no">${p.no}번</div>
+          <div class="nm">${p.name}</div>
+          <div class="pr"><span class="now">${p.price.toLocaleString()}원</span></div>
+          ${p.soldout ? '<span class="badge b1">품절</span>' : ''}
+        </div>
+      </div>
+      <div class="act">
+        <button class="qb" onclick="chgQty(${i},-1)">−</button>
+        <span class="qv" id="qv${i}">${qty[i] || 1}</span>
+        <button class="qb" onclick="chgQty(${i},1)">＋</button>
+        <button class="add" onclick="addItem(${i})" ${p.soldout ? "disabled" : ""}>${p.soldout ? "품절" : "🛒 담기"}</button>
+      </div>
+    </div>`;
+  }).join("") +
+  (hits.length > shown ? '<div class="more" onclick="shown+=20;renderList(false);">＋ 더보기 (' + (hits.length - shown) + '개 남음)</div>' : '');
+}
+
+function addItem(i){
+  const p = PRODUCTS[i];
+  if(!p || p.soldout) return;
+  const q = qty[i] || 1;
+  const name = p.no + "번 " + p.name;
+  const same = cart.find(x => x.name === name);
+  if(same){
+    if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + name + "\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
+    same.qty += q;
+  }else{
+    if(!confirm("아래 상품을 담을까요?\n\n" + name + "\n" +
+                p.price.toLocaleString() + "원 × " + q + "개 = " + (p.price*q).toLocaleString() + "원")) return;
+    cart.push({ name: name, price: p.price, opt: "", qty: q });
+  }
+  qty[i] = 1;
+  const el = document.getElementById("qv" + i); if(el) el.textContent = 1;
+  renderCart();
+  loadProducts(true);
+}
+function delItem(i){ cart.splice(i,1); renderCart(); }
+function cartQty(i, d){
+  const c = cart[i];
+  if(!c) return;
+  const next = c.qty + d;
+  if(next < 1){
+    if(!confirm("수량이 0이 됩니다.\n주문 목록에서 삭제할까요?")) return;
+    cart.splice(i,1);
+  }else{
+    c.qty = next;
+  }
+  renderCart();
+}
+
+function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function isAddl(){ return $("selShip").value === "0"; }
+function goodsTotal(){ return cart.reduce((s,c)=>s+c.price*c.qty,0); }
+function totalQty(){ return cart.reduce((s,c)=>s+c.qty,0); }
+function isFreeShip(){ return cart.length > 0 && goodsTotal() >= CONFIG.FREE_SHIP_MIN; }
+function shipFee(){
+  if(!cart.length) return 0;
+  if(isAddl()) return 0;
+  if(isFreeShip()) return 0;
+  return parseInt($("selShip").value,10);
+}
+
+function renderCart(){
+  const list = $("cartList");
+  if(!cart.length){
+    list.innerHTML = "<div class='cart-empty'>담긴 상품이 없습니다.</div>";
+  }else{
+    list.innerHTML = cart.map((c,i)=>`
+      <div class="cart-item">
+        <div style="flex:1;">
+          <div class="ci-name">${c.name}</div>
+          <div class="ci-opt">${fmt(c.price)} × ${c.qty}개</div>
+          <div class="ci-qty">
+            <button class="qb" onclick="cartQty(${i},-1)">−</button>
+            <span class="qv">${c.qty}</span>
+            <button class="qb" onclick="cartQty(${i},1)">＋</button>
+            <button class="ci-del" onclick="delItem(${i})">삭제</button>
+          </div>
+        </div>
+        <div class="ci-price">${fmt(c.price*c.qty)}</div>
+      </div>`).join("");
+  }
+  const cnt = cart.reduce((s,c)=>s+c.qty,0);
+  $("sumCount").textContent = cnt + "개";
+  $("sumGoods").textContent = fmt(goodsTotal());
+  const free = isFreeShip();
+  $("shipWrap").style.display = free ? "none" : "block";
+  $("freeMsg").style.display  = free ? "block" : "none";
+  $("sumShip").textContent  = (cart.length && isAddl()) ? "무료 (추가 주문)" : free ? "무료 🎉" : fmt(shipFee());
+  $("sumTotal").textContent = fmt(goodsTotal()+shipFee());
+  renderSummary();
+}
+function renderSummary(){
+  if(!cart.length){
+    $("summaryBox").textContent = "상품을 담으면 구매내역이 자동으로 표시됩니다.";
+    $("summaryBox").className = "muted";
+    return;
+  }
+  $("summaryBox").className = "";
+  $("summaryBox").innerHTML =
+    cart.map(c=>`· ${c.name} × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
+    `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}<br><b>합계 ${fmt(goodsTotal()+shipFee())}</b>`;
+}
+
+/* ---------- 주소 검색 (다음 우편번호) ---------- */
+let postcodeLoaded = false;
+function openPostcode(){
+  if(postcodeLoaded){ runPostcode(); return; }
+  const sc = document.createElement("script");
+  sc.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+  sc.onload = ()=>{ postcodeLoaded = true; runPostcode(); };
+  sc.onerror = ()=>{
+    if(location.protocol === "file:"){
+      alert("주소 검색은 인터넷에 올린 주소(https://...)에서만 작동합니다.\n지금은 파일을 직접 연 상태라 동작하지 않아요. GitHub에 올린 후 다시 테스트해주세요!");
+    }else{
+      alert("주소 검색을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.");
+    }
+  };
+  document.body.appendChild(sc);
+}
+function runPostcode(){
+  new daum.Postcode({
+    oncomplete: d => {
+      $("cZip").value = d.zonecode;
+      $("cAddr").value = d.roadAddress || d.jibunAddress;
+      $("cAddr2").focus();
+    }
+  }).open();
+}
+
+/* ---------- 고객정보 저장 ---------- */
+const SAVE_KEY = "lumie_customer";
+function loadSaved(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if(!d) return;
+    $("cNick").value = d.nick||""; $("cName").value = d.name||"";
+    $("cPhone").value = d.phone||""; $("cZip").value = d.zip||"";
+    $("cAddr").value = d.addr||""; $("cAddr2").value = d.addr2||"";
+    if(d.nick) $("savedHint").style.display = "block";
+  }catch(e){}
+}
+function saveCustomer(){
+  localStorage.setItem(SAVE_KEY, JSON.stringify({
+    nick:$("cNick").value, name:$("cName").value, phone:$("cPhone").value,
+    zip:$("cZip").value, addr:$("cAddr").value, addr2:$("cAddr2").value
+  }));
+}
+function clearSaved(){
+  if(confirm("저장된 고객정보를 지울까요?")){
+    localStorage.removeItem(SAVE_KEY);
+    ["cNick","cName","cPhone","cZip","cAddr","cAddr2","cMemo","cReq"].forEach(id=>$(id).value="");
+    $("savedHint").style.display = "none";
+  }
+}
+
+/* ---------- 주문 전송 ---------- */
+async function submitOrder(){
+  if(submitting) return; // 중복 전송 방지
+  if(!cart.length){ alert("담긴 상품이 없습니다. 상품을 먼저 담아주세요."); return; }
+  const need = [["cNick","닉네임"],["cName","수령인 성함"],["cPhone","연락처"],["cAddr","주소"]];
+  for(const [id,label] of need){
+    if(!$(id).value.trim()){ alert(label + "을(를) 입력해주세요."); $(id).focus(); return; }
+  }
+  const payMethod = document.querySelector('input[name=payMethod]:checked').value;
+  if(payMethod === "card" && !window.PayApp){
+    alert("카드결제 모듈을 아직 불러오는 중입니다. 잠시 후(1~2초) 다시 시도해주세요.");
+    return;
+  }
+  if(isAddl() && localStorage.getItem("lumie_last_order") !== todayStr()){
+    if(!confirm("배송비가 '추가 주문 (배송비 없음)'으로 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 주문할까요?")) return;
+  }
+  submitting = true;
+  saveCustomer();
+
+  const order = {
+    time: new Date().toLocaleString("ko-KR"),
+    nick: $("cNick").value.trim(),
+    name: $("cName").value.trim(),
+    phone: $("cPhone").value.trim(),
+    zip: $("cZip").value.trim(),
+    addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
+    memo: $("cMemo").value.trim(),
+    req: $("cReq").value.trim(),
+    items: cart.map(c=>`${c.name}x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
+    goods: goodsTotal(),
+    ship: shipFee(),
+    total: goodsTotal()+shipFee(),
+    paymethod: payMethod === "card" ? "카드결제" : "계좌이체",
+    agree: "교환·반품 불가 규정 동의",
+  };
+
+  // 카드결제는 팝업 차단을 피하기 위해 클릭 이벤트 안에서 "가장 먼저"(await 전에) 결제창을 엽니다.
+  if(payMethod === "card"){
+    const opened = launchCardPayment(order);
+    if(!opened){ submitting = false; return; }
+  }
+
+  $("loading").classList.add("show");
+  let sent = false;
+  if(CONFIG.SHEET_URL){
+    try{
+      await fetch(CONFIG.SHEET_URL, {
+        method:"POST", mode:"no-cors",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" },
+        body: JSON.stringify(order),
+      });
+      sent = true;
+    }catch(e){ console.error(e); }
+  }
+  $("loading").classList.remove("show");
+
+  if(CONFIG.SHEET_URL && !sent){
+    submitting = false;
+    alert("주문 전송에 실패했습니다. 네트워크 확인 후 다시 시도해주세요.");
+    return;
+  }
+  $("doneAmt").textContent = fmt(order.total);
+  $("doneBankBox").style.display = payMethod === "card" ? "none" : "flex";
+  $("doneCardMsg").style.display = payMethod === "card" ? "block" : "none";
+  try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
+  if(!CONFIG.SHEET_URL) $("testNote").style.display = "block";
+  $("screenOrder").style.display = "none";
+  $("screenDone").style.display = "block";
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
