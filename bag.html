@@ -240,6 +240,17 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 .kg-add[disabled]{background:#CFC5B6;cursor:default;}
 .kg-sold-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;
   background:var(--danger);color:#fff;font-size:11px;font-weight:800;vertical-align:2px;}
+/* ===== 르미에 세트 ===== */
+#secSet{border:2px solid var(--accent);}
+.set-row{display:flex;gap:11px;align-items:center;margin:2px 0 12px;}
+.set-thumb{width:74px;height:74px;border-radius:12px;object-fit:cover;background:var(--soft);flex:none;}
+.set-desc{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.55;}
+.set-desc b{font-weight:800;}
+.set-price{margin-top:5px;font-size:13px;color:var(--sub);}
+.set-price s{color:#B0A08C;}
+.set-price b{font-size:17px;font-weight:800;color:var(--accent-dark);margin-left:5px;}
+.set-save{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;
+  background:var(--danger);color:#fff;font-size:11px;font-weight:800;vertical-align:2px;}
 </style>
 </head>
 <body>
@@ -313,9 +324,41 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
   <div id="screenOrder">
 
     <div class="qnav">
+      <button type="button" onclick="goSec('secSet')">🎀 세트</button>
       <button type="button" onclick="goSec('secKeyring')">🔑 키링</button>
       <button type="button" onclick="goSec('secFree')">👜 가방 주문</button>
       <button type="button" onclick="goSec('secCart')">🛒 주문 목록</button>
+    </div>
+
+    <div class="card" id="secSet">
+      <h2>🎀 르미에 세트</h2>
+      <div class="set-row">
+        <img class="set-thumb" id="setImg" alt="닥스훈트 키링"
+             onerror="this.style.display='none'">
+        <div class="set-desc">
+          <b>테라스 (소)</b> + <b>닥스훈트 키링</b>
+          <div class="set-price">
+            <s id="setOrig"></s> <b id="setNow"></b><span class="set-save" id="setSave"></span>
+          </div>
+        </div>
+      </div>
+
+      <label class="fld">테라스 (소) 색상 <span class="muted">— 필수</span></label>
+      <select class="kg-sel" id="setColor">
+        <option>블랙</option><option>브라운</option><option>에토프</option><option>아이보리</option>
+      </select>
+      <div id="setStock" style="margin-top:6px;"></div>
+
+      <label class="fld">수량</label>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="setQtyChg(-1)">−</button>
+        <input class="qty-val" type="number" id="setSetQty" value="1" min="1" readonly>
+        <button class="qty-btn" onclick="setQtyChg(1)">＋</button>
+      </div>
+
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="setAddBtn" onclick="addLumieSet()">🛒 세트 담기</button>
+      </div>
     </div>
 
 
@@ -563,6 +606,7 @@ function startOrder(){
   $("screenGate").style.display = "none";
   $("screenOrder").style.display = "block";
   kgRender();
+  setRenderStock();
   kgLoadStock();
   if(!window.__kgTimer) window.__kgTimer = setInterval(kgLoadStock, 30000);
   loadSaved();
@@ -604,6 +648,7 @@ async function kgLoadStock(){
     arr.forEach(r => { m[kgKey(r.no, r.color)] = (r.left === null || r.left === undefined) ? null : Number(r.left); });
     kgStock = m;
     kgRender();
+    setRenderStock();
   }catch(e){ console.warn("키링 재고 불러오기 실패", e); }
 }
 
@@ -764,6 +809,87 @@ window.addEventListener("scroll", function(){
   b.style.display = (onOrder && window.pageYOffset > 500) ? "block" : "none";
 });
 
+
+/* ================================================================
+   ★ 르미에 세트 — 테라스(소) + 닥스훈트 키링 묶음 할인
+     금액·색상을 바꾸려면 아래 KG_SET 만 고치면 됩니다.
+   ================================================================ */
+const KG_SET = {
+  bagName   : "테라스 (소)",
+  bagPrice  : 18000,
+  bagColors : ["블랙", "브라운", "에토프", "아이보리"],
+  keyNo     : 50,                    // 키링 번호 (재고·발주 집계에 사용)
+  keyStyle  : "B-19",
+  keyName   : "닥스훈트 키링",
+  keyPrice  : 5000,
+  setPrice  : 22000
+};
+
+(function initSet(){
+  const orig = KG_SET.bagPrice + KG_SET.keyPrice;
+  $("setOrig").textContent = orig.toLocaleString("ko-KR") + "원";
+  $("setNow").textContent  = KG_SET.setPrice.toLocaleString("ko-KR") + "원";
+  $("setSave").textContent = (orig - KG_SET.setPrice).toLocaleString("ko-KR") + "원 할인";
+  $("setImg").src = KG_IMG_BASE + KG_SET.keyNo + ".jpg";
+  $("setColor").innerHTML = KG_SET.bagColors.map(c => `<option>${c}</option>`).join("");
+})();
+
+// 세트로 담긴 키링도 재고에서 빠지도록 같은 kgNo 를 붙여 관리합니다
+function setRenderStock(){
+  const left = kgLeft(KG_SET.keyNo, "단일색상");
+  const can  = kgCanAdd(KG_SET.keyNo, "단일색상");
+  const box  = $("setStock");
+  const btn  = $("setAddBtn");
+  if(!box || !btn) return;
+  if(left === null){ box.innerHTML = ""; btn.disabled = false; btn.textContent = "🛒 세트 담기"; return; }
+  box.innerHTML = kgStockLine(can);
+  const out = (can !== null && can <= 0);
+  btn.disabled = out;
+  btn.textContent = out ? "품절" : "🛒 세트 담기";
+}
+
+function setQtyChg(d){
+  const el = $("setSetQty");
+  let v = Math.max(1, (parseInt(el.value,10)||1) + d);
+  const can = kgCanAdd(KG_SET.keyNo, "단일색상");
+  if(can !== null && v > can){
+    v = Math.max(1, can);
+    if(d > 0) alert(can > 0 ? "닥스훈트 키링이 " + can + "개 남았습니다." : "닥스훈트 키링이 품절되었습니다.");
+  }
+  el.value = v;
+}
+
+function addLumieSet(){
+  const color = $("setColor").value;
+  const qty = parseInt($("setSetQty").value, 10) || 1;
+
+  const can = kgCanAdd(KG_SET.keyNo, "단일색상");
+  if(can === 0){ alert("닥스훈트 키링이 품절되어 세트를 담을 수 없습니다."); kgLoadStock(); return; }
+  if(can !== null && qty > can){ alert("닥스훈트 키링이 " + can + "개 남았습니다."); kgLoadStock(); return; }
+
+  // 세트 본체 (할인가 전액) + 키링 0원 줄 → 합계는 세트가 그대로, 키링 재고·발주는 정상 집계
+  const mainName = `[르미에세트] ${KG_SET.bagName} + ${KG_SET.keyName}`;
+  const keyName  = `K${KG_SET.keyNo}번 ${KG_SET.keyName}(${KG_SET.keyStyle}) [세트포함]`;
+
+  const same = cart.find(c => c.name === mainName && c.opt === color);
+  if(same){
+    if(!confirm("이미 담겨 있는 세트입니다.\n수량을 추가할까요? (취소하면 담지 않습니다)")) return;
+    same.qty += qty;
+  }else{
+    cart.push({ name: mainName, price: KG_SET.setPrice, opt: color, qty });
+  }
+
+  const keyLine = cart.find(c => c.name === keyName);
+  if(keyLine) keyLine.qty += qty;
+  else cart.push({ name: keyName, price: 0, opt: "단일색상", qty, kgNo: KG_SET.keyNo });
+
+  $("setSetQty").value = 1;
+  kgRender();
+  setRenderStock();
+  renderCart();
+  $("cartList").scrollIntoView({ behavior:"smooth", block:"center" });
+}
+
 function addToCart(){
   const name = $("inpItemName").value.trim();
   if(!name){ alert("품목명을 입력해주세요."); $("inpItemName").focus(); return; }
@@ -804,7 +930,22 @@ function addSetup(){
   $("setQty").value = 1;
   renderCart();
 }
-function delItem(i){ cart.splice(i,1); renderCart(); }
+function delItem(i){
+  const gone = cart[i];
+  cart.splice(i,1);
+  // 세트를 지우면 같이 담긴 0원 키링 줄도 같은 수량만큼 정리
+  if(gone && gone.name.indexOf("[르미에세트]") === 0){
+    const keyName = `K${KG_SET.keyNo}번 ${KG_SET.keyName}(${KG_SET.keyStyle}) [세트포함]`;
+    const k = cart.findIndex(c => c.name === keyName);
+    if(k > -1){
+      cart[k].qty -= gone.qty;
+      if(cart[k].qty <= 0) cart.splice(k,1);
+    }
+  }
+  renderCart();
+  if(typeof kgRender === "function") kgRender();
+  if(typeof setRenderStock === "function") setRenderStock();
+}
 
 function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
 function isAddl(){ return $("selShip").value === "0"; }
