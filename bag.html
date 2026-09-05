@@ -252,6 +252,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 .set-save{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;
   background:var(--danger);color:#fff;font-size:11px;font-weight:800;vertical-align:2px;}
 .set-unit + .set-unit{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line);}
+.set-photo{width:100%;height:auto;display:block;border-radius:14px;background:var(--soft);margin:2px 0 12px;}
 </style>
 </head>
 <body>
@@ -798,7 +799,8 @@ const KG_SETS = [
     keyStyle  : "B-19",
     keyName   : "닥스훈트 키링",
     keyPrice  : 5000,
-    setPrice  : 22000
+    setPrice  : 22000,
+    img       : "images/set/set_terrace.jpg"   // 세트 실사진 (비우면 키링 사진으로 대체)
   },
   {
     bagName   : "테라스 (대)",
@@ -808,7 +810,8 @@ const KG_SETS = [
     keyStyle  : "B-19",
     keyName   : "닥스훈트 키링",
     keyPrice  : 5000,
-    setPrice  : 22000
+    setPrice  : 22000,
+    img       : "images/set/set_terrace.jpg"
   }
 ];
 
@@ -821,11 +824,19 @@ function setKeyName(s){ return `K${s.keyNo}번 ${s.keyName}(${s.keyStyle}) [세�
   box.innerHTML = KG_SETS.map((s, i) => {
     const orig = s.bagPrice + s.keyPrice;
     const save = orig - s.setPrice;
+    const photo = s.img
+      ? `<img class="set-photo" src="${s.img}" alt="${s.bagName} + ${s.keyName} 세트"
+              loading="lazy" onerror="this.style.display='none'">`
+      : "";
+    const thumb = s.img
+      ? ""
+      : `<img class="set-thumb" src="${KG_IMG_BASE}${s.keyNo}.jpg" alt="${s.keyName}"
+              onerror="this.style.display='none'">`;
     return `
     <div class="set-unit">
+      ${photo}
       <div class="set-row">
-        <img class="set-thumb" src="${KG_IMG_BASE}${s.keyNo}.jpg" alt="${s.keyName}"
-             onerror="this.style.display='none'">
+        ${thumb}
         <div class="set-desc">
           <b>${s.bagName}</b> + <b>${s.keyName}</b>
           <div class="set-price">
