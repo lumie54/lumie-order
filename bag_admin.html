@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#B08D57">
+<title>르미에 가방 방송 제어</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5EFE6;
+  --card:#FFFFFF;
+  --soft:#FBF7F0;
+  --ink:#3E332A;
+  --sub:#8A7A68;
+  --accent:#B08D57;
+  --accent-dark:#8F6F3F;
+  --line:#E5DACB;
+  --danger:#B3402E;
+  --ok:#4E7A4E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:"Pretendard",-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);color:var(--ink);
+  line-height:1.55;font-size:15px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px;}
+.brand{text-align:center;padding:26px 0 18px;}
+.brand .logo{
+  font-family:"Cormorant Garamond",serif;font-style:italic;
+  font-size:40px;font-weight:600;color:var(--accent-dark);letter-spacing:1px;
+}
+.brand .name{font-size:13px;letter-spacing:6px;color:var(--sub);margin-top:2px;}
+.brand .divider{width:36px;height:2px;background:var(--accent);margin:14px auto 0;border-radius:2px;}
+h1.page-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:20px;}
+
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:20px 18px;margin-bottom:16px;
+  box-shadow:0 1px 4px rgba(62,51,42,.05);
+}
+.card h2{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.card h2 .tag{
+  font-size:11px;font-weight:600;color:var(--accent-dark);
+  background:var(--soft);border:1px solid var(--line);
+  border-radius:20px;padding:2px 9px;letter-spacing:1px;
+}
+
+/* ---------- 안내 게이트 ---------- */
+.notice-danger{
+  background:#FBF3F1;border:1px solid #E7C8C0;border-radius:12px;
+  padding:16px 15px;margin-bottom:14px;
+}
+.notice-danger .nd-title{font-size:15px;font-weight:800;color:var(--danger);margin-bottom:8px;}
+.notice-danger ul{list-style:none;}
+.notice-danger li{padding-left:16px;position:relative;margin-bottom:4px;font-size:14px;}
+.notice-danger li::before{content:"·";position:absolute;left:4px;color:var(--danger);font-weight:800;}
+.notice-block{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:14px;}
+.notice-block .nb-title{font-weight:700;margin-bottom:8px;font-size:14px;}
+.notice-block p{font-size:13.5px;color:var(--ink);margin-bottom:6px;}
+.notice-block p:last-child{margin-bottom:0;}
+.row-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px;}
+.row-line:last-child{border-bottom:none;}
+.row-line b{font-weight:700;}
+.muted{color:var(--sub);font-size:12.5px;}
+.acct{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:12px;margin-top:8px;
+}
+.acct .num{font-weight:800;font-size:15.5px;letter-spacing:.3px;}
+.acct .bank{font-size:12.5px;color:var(--sub);}
+.btn-copy{
+  flex-shrink:0;border:1px solid var(--accent);background:#fff;color:var(--accent-dark);
+  font-size:12.5px;font-weight:700;border-radius:8px;padding:8px 12px;cursor:pointer;
+}
+.btn-copy:active{background:var(--soft);}
+.agree{
+  display:flex;align-items:center;gap:10px;justify-content:center;
+  padding:14px 0 4px;font-size:14.5px;font-weight:600;cursor:pointer;user-select:none;
+}
+.agree input{width:19px;height:19px;accent-color:var(--accent);}
+
+/* ---------- 공통 버튼/입력 ---------- */
+.btn{
+  display:block;width:100%;text-align:center;border:none;cursor:pointer;
+  border-radius:12px;padding:15px;font-size:16px;font-weight:700;
+  font-family:inherit;transition:opacity .15s;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active:not(:disabled){background:var(--accent-dark);}
+.btn-outline{background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);}
+.btn-ghost{background:none;color:var(--sub);font-size:13px;padding:10px;text-decoration:underline;}
+label.fld{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12px 0 5px;}
+label.fld:first-of-type{margin-top:0;}
+input[type=text],input[type=tel],input[type=number],select,textarea{
+  width:100%;border:1px solid var(--line);border-radius:10px;
+  padding:12px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);
+  appearance:none;-webkit-appearance:none;
+}
+select{
+  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7A68' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);}
+.inline{display:flex;gap:8px;}
+.inline > *{flex:1;}
+.inline .fit{flex:0 0 auto;}
+
+/* ---------- 상품 검색 ---------- */
+.search-row{display:flex;gap:8px;}
+.search-row input{flex:1;}
+.btn-search{
+  flex:0 0 auto;background:var(--ink);color:#fff;border:none;border-radius:10px;
+  padding:0 20px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.hint{font-size:12.5px;color:var(--sub);margin-top:7px;}
+.found{
+  margin-top:12px;background:var(--soft);border:1px solid var(--line);
+  border-radius:12px;padding:14px;display:none;
+}
+.found.show{display:block;}
+.found .pname{font-weight:800;font-size:15.5px;}
+.found .pprice{color:var(--accent-dark);font-weight:800;margin-top:2px;}
+.found .pmat{font-size:12.5px;color:var(--sub);margin-top:3px;}
+.found .pnote{font-size:12.5px;color:var(--danger);margin-top:4px;font-weight:600;}
+.qty-row{display:flex;align-items:center;gap:0;margin-top:5px;}
+.qty-btn{
+  width:44px;height:44px;border:1px solid var(--line);background:#fff;
+  font-size:20px;cursor:pointer;color:var(--ink);
+}
+.qty-btn:first-child{border-radius:10px 0 0 10px;}
+.qty-btn:last-child{border-radius:0 10px 10px 0;}
+.qty-val{
+  width:64px;height:44px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  border-left:none;border-right:none;text-align:center;font-weight:700;border-radius:0;
+}
+.soldout-msg{
+  display:none;margin-top:12px;background:#FBF3F1;border:1px solid #E7C8C0;
+  border-radius:10px;padding:12px;font-size:14px;color:var(--danger);font-weight:600;text-align:center;
+}
+
+
+/* ---------- 상품 카탈로그 ---------- */
+.pitem{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px;}
+.pitem.sold{opacity:.5;}
+.pitem .nm{font-weight:700;font-size:14.5px;line-height:1.4;}
+.pitem .pr{margin-top:6px;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
+.pitem .old{font-size:12.5px;color:var(--sub);text-decoration:line-through;}
+.pitem .now{font-size:18px;font-weight:800;color:var(--accent-dark);}
+.badge{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:6px;}
+.b1{background:#B3402E;color:#fff;}
+.b2{background:#C97B30;color:#fff;}
+.b3{background:#EFE3CF;color:#7A5F32;}
+.b4{background:#EDE7DE;color:var(--sub);}
+.pitem .meta{font-size:11.5px;color:var(--sub);margin-top:7px;line-height:1.5;}
+.pitem .low{color:var(--danger);font-weight:700;}
+.pitem .desc{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.5;}
+.pitem .act{display:flex;gap:8px;align-items:center;margin-top:10px;}
+.pitem .act button.add{flex:1;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pitem .act button.add:disabled{background:#C9BEB0;cursor:not-allowed;}
+.qb{width:34px;height:34px;border:1px solid var(--line);background:#fff;font-size:16px;cursor:pointer;border-radius:8px;color:var(--ink);}
+.qv{width:40px;text-align:center;font-weight:700;font-size:14px;}
+.more{text-align:center;padding:12px;color:var(--accent-dark);font-weight:700;font-size:14px;cursor:pointer;border:1px dashed var(--line);border-radius:10px;}
+
+/* ---------- 주문 목록 ---------- */
+.cart-empty{color:var(--sub);text-align:center;padding:16px 0;font-size:14px;}
+.cart-item{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+  padding:12px 0;border-bottom:1px dashed var(--line);
+}
+.cart-item:last-of-type{border-bottom:1px solid var(--line);}
+.ci-name{font-weight:700;font-size:14.5px;}
+.ci-opt{font-size:12.5px;color:var(--sub);margin-top:2px;}
+.ci-price{font-weight:700;white-space:nowrap;font-size:14.5px;}
+.ci-del{
+  background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;
+  text-decoration:underline;padding:2px 0;margin-top:3px;
+}
+.ci-qty{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.ci-qty .qb{width:30px;height:30px;font-size:15px;}
+.ci-qty .qv{min-width:26px;text-align:center;font-weight:700;font-size:14px;}
+.ci-qty .ci-del{margin-top:0;margin-left:6px;}
+.sum-row{display:flex;justify-content:space-between;padding:9px 0 0;font-size:14.5px;}
+.sum-row.total{
+  margin-top:8px;padding-top:12px;border-top:2px solid var(--ink);
+  font-size:16.5px;font-weight:800;
+}
+.sum-row.total .amt{color:var(--accent-dark);}
+
+/* ---------- 완료 화면 ---------- */
+#screenDone{display:none;text-align:center;padding-top:30px;}
+.done-check{
+  width:64px;height:64px;border-radius:50%;background:var(--accent);
+  color:#fff;font-size:30px;line-height:64px;margin:0 auto 18px;
+}
+#screenDone h2{font-size:20px;margin-bottom:8px;}
+#screenDone .sub{color:var(--sub);font-size:14px;margin-bottom:20px;}
+.done-amount{
+  background:var(--soft);border:1px solid var(--line);border-radius:12px;
+  padding:16px;margin-bottom:10px;
+}
+.done-amount .lbl{font-size:13px;color:var(--sub);}
+.done-amount .amt{font-size:26px;font-weight:800;color:var(--accent-dark);margin-top:2px;}
+.test-note{font-size:12px;color:var(--danger);margin-top:10px;display:none;}
+
+#screenOrder{display:none;}
+.overlay{
+  display:none;position:fixed;inset:0;background:rgba(62,51,42,.45);
+  z-index:50;align-items:center;justify-content:center;
+}
+.overlay.show{display:flex;}
+.overlay .box{background:#fff;border-radius:14px;padding:22px 26px;font-weight:700;}
+footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;letter-spacing:2px;}
+/* ---------- 가방 실시간 ---------- */
+.live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#D33;box-shadow:0 0 0 0 rgba(221,51,51,.6);animation:pulse 1.6s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(221,51,51,.55);}70%{box-shadow:0 0 0 9px rgba(221,51,51,0);}100%{box-shadow:0 0 0 0 rgba(221,51,51,0);}}
+.pitem .code{font-size:12px;color:var(--sub);margin-top:2px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.3px;}
+.badge.lv-now{background:#D33;color:#fff;margin:0 0 6px;}
+.badge.lv-seq{background:#EDE7DE;color:var(--sub);margin:0 0 6px;}
+.lrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);}
+.lrow:last-child{border-bottom:none;}
+.lrow.top .nm{color:#B3402E;}
+.lrow .nm{font-weight:700;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lrow .code{font-size:12px;color:var(--sub);}
+.lseq{flex:0 0 30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.lrow.top .lseq{background:#D33;}
+.btn-mini{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:8px;padding:7px 10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:30px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:99;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.bad{background:var(--danger);}
+
+.phead{display:flex;gap:12px;align-items:flex-start;}
+.pimg{width:88px;height:88px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#fff;flex:0 0 88px;cursor:zoom-in;}
+.pimg.sm{width:44px;height:44px;flex:0 0 44px;border-radius:8px;cursor:default;}
+.overlay.imgview{background:rgba(0,0,0,.85);cursor:zoom-out;}
+.overlay.imgview img{max-width:94vw;max-height:90vh;border-radius:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="logo">lumie</div>
+    <div class="name">방 송 제 어</div>
+    <div class="divider"></div>
+  </div>
+  <h1 class="page-title">👜 가방 방송 — 상품 띄우기</h1>
+
+  <div class="card" id="pinCard">
+    <h2>🔐 비밀번호</h2>
+    <div class="inline">
+      <input type="text" id="pin" inputmode="numeric" placeholder="Apps Script의 ADMIN_PIN">
+      <button class="btn-search fit" onclick="savePin()">저장</button>
+    </div>
+    <p class="hint">이 기기에 저장되며, 띄우기·내리기 할 때 사용됩니다.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="live-dot"></span> 현재 띄운 상품 <span class="tag" id="liveCnt">0개</span></h2>
+    <p class="hint" style="margin:0 0 10px;">고객 주문서에도 이 순서(최신이 위)로 보입니다.</p>
+    <div id="liveList"></div>
+    <button class="btn btn-outline" style="margin-top:12px;padding:12px;font-size:14px;color:var(--danger);border-color:#E7C8C0;" onclick="clearAll()">🧹 방송 시작 — 목록 전체 초기화</button>
+  </div>
+
+  <div class="card">
+    <h2>🔍 상품 찾아서 띄우기</h2>
+    <input type="text" id="q" placeholder="품번 뒷자리(예: 0647) 또는 번호(예: 12)" oninput="renderSearch()" autocomplete="off">
+    <p class="hint" id="cnt"></p>
+    <div id="list" style="margin-top:6px;"></div>
+  </div>
+
+  <footer>LUMIE · 르미에</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONFIG = {
+  SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
+  POLL_MS: 8000,
+};
+const $ = id => document.getElementById(id);
+const PIN_KEY = "lumie_admin_pin";
+let PRODUCTS = [], BYNO = {}, LIVE = [], loaded = false, lastRaw = "", busy = false;
+
+function toast(msg, bad){
+  const t = $("toast"); t.textContent = msg; t.className = "toast show" + (bad ? " bad" : "");
+  setTimeout(()=>t.className = "toast", 2200);
+}
+function pin(){ return localStorage.getItem(PIN_KEY) || ""; }
+function savePin(){
+  const v = $("pin").value.trim();
+  if(!v){ toast("비밀번호를 입력하세요", true); return; }
+  localStorage.setItem(PIN_KEY, v);
+  $("pin").value = ""; $("pinCard").style.display = "none";
+  toast("저장됐습니다");
+}
+
+let lastLive = "";
+async function load(){
+  try{
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=bag&t=" + Date.now());
+    const raw = await res.text();
+    if(raw !== lastRaw){
+      const data = JSON.parse(raw);
+      lastRaw = raw;
+      const base = String(data.base || "");
+      PRODUCTS = (data.items||[]).map(r => {
+        let img = String(r.img||"");
+        if(img && !/^https?:\/\//.test(img)) img = base + img;
+        return { no: Number(r.no)||0, code: String(r.code||""), name: String(r.name||""), price: Number(r.price)||0, img: img,
+          colors: (r.colors||[]).map(c => ({ name: String(c[0]||""), soldout: Number(c[1])===1 })) };
+      }).filter(p => p.no);
+      BYNO = {}; PRODUCTS.forEach(p => BYNO[p.no] = p);
+      loaded = true;
+      renderSearch();
+    }
+    await loadLive();
+  }catch(e){
+    console.error(e);
+    if(!loaded) $("liveList").innerHTML = "<p class='hint' style='color:var(--danger);text-align:center;padding:16px 0;'>불러오기 실패 — 네트워크 확인 후 새로고침</p>";
+  }
+}
+async function loadLive(){
+  const res = await fetch(CONFIG.SHEET_URL + "?mode=baglive&t=" + Date.now());
+  const raw = await res.text();
+  if(raw === lastLive && LIVE.length) return;
+  lastLive = raw;
+  LIVE = (JSON.parse(raw).live||[]).filter(l => BYNO[l.no]);
+  renderLive();
+}
+
+function colorTxt(p){
+  return "색상 " + p.colors.map(c => c.name + (c.soldout ? "(종료)" : "")).join(" · ");
+}
+
+function renderLive(){
+  $("liveCnt").textContent = LIVE.length + "개";
+  if(!LIVE.length){ $("liveList").innerHTML = "<p class='hint' style='text-align:center;padding:14px 0;'>아직 띄운 상품이 없습니다.</p>"; return; }
+  $("liveList").innerHTML = LIVE.map((l, idx) => {
+    const p = BYNO[l.no];
+    return `
+    <div class="lrow ${idx===0 ? "top" : ""}">
+      <div class="lseq">${l.seq}</div>
+      ${p.img ? `<img class="pimg sm" src="${p.img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ""}
+      <div style="flex:1;min-width:0;">
+        <div class="nm">${p.code}${(l.name || p.name) ? " · " + (l.name || p.name) : ""}</div>
+        <div class="code">${(l.price || p.price).toLocaleString()}원 · 시트 ${p.no}번${/^\d{2}:\d{2}/.test(l.ts||"") ? " · " + l.ts.slice(0,5) : ""}</div>
+      </div>
+      <button class="btn-mini" onclick="remove(${p.no})">내리기</button>
+    </div>`;
+  }).join("");
+}
+
+function renderSearch(){
+  if(!loaded) return;
+  let q = $("q").value.trim().toLowerCase().replace(/번$/, "");
+  if(!q){ $("cnt").textContent = "전체 " + PRODUCTS.length + "개 상품"; $("list").innerHTML = ""; return; }
+  const isNum = /^\d+$/.test(q);
+  let hits = PRODUCTS.filter(p => (isNum && String(p.no) === q) || p.code.toLowerCase().indexOf(q) > -1 || p.name.toLowerCase().indexOf(q) > -1);
+  if(isNum) hits.sort((a,b) => (String(b.no)===q) - (String(a.no)===q));
+  $("cnt").textContent = "검색 결과 " + hits.length + "개";
+  $("list").innerHTML = hits.slice(0, 10).map(p => `
+    <div class="pitem">
+      <div class="phead">
+        ${p.img ? `<img class="pimg" src="${p.img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ""}
+        <div style="flex:1;min-width:0;">
+          <div class="nm"><span style="font-family:monospace;">${p.code}</span> <span class="muted">(시트 ${p.no}번)</span></div>
+          <div class="meta">${colorTxt(p)}</div>
+        </div>
+      </div>
+      <div class="inline" style="margin-top:9px;">
+        <input type="text" id="nm${p.no}" placeholder="품명 (예: 미니 토트)" value="${p.name.replace(/"/g,'&quot;')}">
+        <input type="text" id="pr${p.no}" inputmode="numeric" placeholder="가격" value="${p.price || ""}" style="flex:0 0 110px;">
+      </div>
+      <button class="btn btn-primary" style="margin-top:9px;padding:12px;font-size:15px;" onclick="push(${p.no})">📺 이 상품 띄우기</button>
+    </div>`).join("") + (hits.length > 10 ? "<p class='hint' style='text-align:center;'>더 있어요 — 품번을 더 입력해주세요</p>" : "");
+}
+
+async function call(params){
+  if(!pin()){ toast("비밀번호를 먼저 저장하세요", true); $("pinCard").style.display = "block"; return null; }
+  if(busy) return null;
+  busy = true;
+  try{
+    const qs = Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=live&pin=" + encodeURIComponent(pin()) + "&" + qs + "&t=" + Date.now());
+    const j = await res.json();
+    if(!j.ok){ toast(j.msg || "실패", true); return null; }
+    lastRaw = ""; lastLive = ""; await load();
+    return j;
+  }catch(e){ console.error(e); toast("통신 실패 — 다시 시도", true); return null; }
+  finally{ busy = false; }
+}
+
+async function push(no){
+  const name = ($("nm"+no) ? $("nm"+no).value : "").trim();
+  const price = ($("pr"+no) ? $("pr"+no).value : "").replace(/[^0-9]/g, "");
+  const r = await call({ action: "push", no: no, name: name, price: price });
+  if(r){ toast((BYNO[no] ? BYNO[no].code : no) + " 띄웠습니다 ✓"); $("q").value = ""; renderSearch(); window.scrollTo({top:0, behavior:"smooth"}); }
+}
+async function remove(no){
+  if(!confirm((BYNO[no] ? BYNO[no].code : no) + " 을(를) 목록에서 내릴까요?")) return;
+  const r = await call({ action: "remove", no: no });
+  if(r) toast("내렸습니다");
+}
+async function clearAll(){
+  if(!confirm("띄운 상품 목록을 전부 지웁니다.\n(주문에는 영향 없음)\n\n방송 시작 전에만 눌러주세요. 진행할까요?")) return;
+  const r = await call({ action: "clear" });
+  if(r) toast("초기화 완료");
+}
+
+if(pin()) $("pinCard").style.display = "none";
+load();
+setInterval(loadLive, CONFIG.POLL_MS);
+setInterval(load, 60000);
+</script>
+</body>
+</html>
