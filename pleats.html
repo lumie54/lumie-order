@@ -189,18 +189,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .overlay.show{display:flex;}
 .overlay .box{background:#fff;border-radius:14px;padding:22px 26px;font-weight:700;}
 footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;letter-spacing:2px;}
-
-/* ---------- 결제 방법 / 미결제 카드주문 ---------- */
-.payopt{display:flex;gap:8px;}
-.payopt-item{flex:1;display:flex;align-items:center;gap:9px;border:1.5px solid var(--line);border-radius:12px;padding:12px 11px;cursor:pointer;background:#fff;}
-.payopt-item:has(input:checked){border-color:var(--accent);background:var(--soft);}
-.payopt-item input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;}
-.payopt-item span{font-weight:700;font-size:14.5px;line-height:1.3;}
-.payopt-item small{display:block;font-weight:500;font-size:11.5px;color:var(--sub);margin-top:2px;}
-#pendingTop{display:none;position:sticky;top:0;z-index:40;background:#B3402E;color:#fff;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.55;box-shadow:0 4px 14px rgba(0,0,0,.15);}
-#pendingTop b{color:#fff;}
-#pendingTop .btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
-#pendingTop button{border:0;border-radius:8px;padding:8px 12px;font-weight:800;font-size:13px;cursor:pointer;background:#fff;color:#B3402E;}
 </style>
 </head>
 <body>
@@ -242,8 +230,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       </div>
 
       <div class="notice-block">
-        <div class="nb-title">💳 결제 방법</div>
-        <p><b>계좌이체</b> 또는 <b>카드결제</b> 중 선택할 수 있어요.</p>
+        <div class="nb-title">❤️ 입금 계좌</div>
         <div class="acct">
           <div>
             <div class="num">3333-18-3356907</div>
@@ -251,9 +238,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
           </div>
           <button class="btn-copy" onclick="copyAcct(this)">복사</button>
         </div>
-        <p class="muted" style="margin-top:8px;">✔️ 계좌이체는 반드시 <b>닉네임으로 입금</b>해주세요.</p>
-        <p class="muted" style="margin-top:4px;">✔️ 카드결제는 주문 완료 후 뜨는 <b>카드로 결제하기</b> 버튼으로 진행됩니다. (페이앱 안전결제)</p>
-        <p class="vatNotice" style="margin-top:8px;font-weight:800;color:var(--danger);background:#fff;border:1.5px solid #E7C8C0;border-radius:10px;padding:10px;text-align:center;font-size:14px;">💳 카드결제는 <u>부가세 <span class="txtVatRate"></span> 포함가</u>로 결제됩니다</p>
+        <p class="muted" style="margin-top:8px;">✔️ 반드시 <b>닉네임으로 입금</b>해주세요.</p>
       </div>
 
       <label class="agree">
@@ -267,14 +252,6 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 
   <!-- ============ 화면 2 : 주문서 ============ -->
   <div id="screenOrder">
-    <div id="pendingTop">
-      💳 <b>아직 결제되지 않은 카드 주문</b>이 있어요.<br>담아두신 상품이 <b>주문 목록에 그대로</b> 있으니 다시 담지 마시고, 필요하면 수정만 해서 <b>주문하기</b>를 눌러주세요.
-      <div class="btns">
-        <button onclick="scrollToCart()">🛒 담긴 상품 보기</button>
-        <button id="btnPrevPayTop" onclick="openPrevPay()" style="display:none;">💳 그대로 결제하기</button>
-        <button onclick="discardPending()" style="background:rgba(255,255,255,.25);color:#fff;">🗑 비우기</button>
-      </div>
-    </div>
 
     <div class="card">
       <h2>🎁 상품 담기</h2>
@@ -286,6 +263,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
         <option value="가디건/자켓|50000">가디건 · 자켓 — 50,000원</option>
         <option value="하의|50000">하의 (바지 · 스커트) — 50,000원</option>
         <option value="원피스|80000">원피스 — 80,000원</option>
+        <option value="셀러 착용 원피스|70000">셀러 착용 원피스 — 70,000원</option>
         <option value="custom">기타 — 가격 직접 입력</option>
       </select>
 
@@ -314,14 +292,6 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 
     <div class="card">
       <h2>🛒 주문 목록</h2>
-      <div id="pendingNote" style="display:none;background:#FBF3F1;border:1px solid #E7C8C0;border-radius:10px;padding:12px;margin-bottom:10px;font-size:13.5px;line-height:1.6;">
-        💳 <b>아직 결제되지 않은 카드 주문</b>이 있어 담아두신 상품을 그대로 불러왔어요.<br>
-        상품을 추가·수정한 뒤 <b>다시 주문</b>하면 이전 결제요청은 자동으로 취소됩니다.
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn-copy" id="btnPrevPay" onclick="openPrevPay()" style="display:none;">💳 그대로 결제하기</button>
-          <button class="btn-copy" onclick="discardPending()">🗑 이미 결제했어요 / 비우기</button>
-        </div>
-      </div>
       <div id="cartList"><div class="cart-empty">담긴 상품이 없습니다.</div></div>
 
       <div class="sum-row"><span>총 상품 수</span><b id="sumCount">0개</b></div>
@@ -335,8 +305,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       </select>
 
       <div class="sum-row"><span>배송비</span><b id="sumShip">4,000원</b></div>
-      <div class="sum-row" id="vatRow" style="display:none;"><span>카드 부가세 (<span class="txtVatRate"></span>)</span><b id="sumVat">0원</b></div>
-      <div class="sum-row total"><span>총 결제 금액</span><span class="amt" id="sumTotal">0원</span></div>
+      <div class="sum-row total"><span>총 입금 금액</span><span class="amt" id="sumTotal">0원</span></div>
     </div>
 
     <div class="card">
@@ -366,28 +335,15 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
     </div>
 
     <div class="card">
-      <h2>💳 결제 방법</h2>
-      <div class="payopt">
-        <label class="payopt-item"><input type="radio" name="payMethod" value="계좌이체" checked onchange="renderPay()"><span>🏦 계좌이체<small>카카오뱅크로 닉네임 입금</small></span></label>
-        <label class="payopt-item"><input type="radio" name="payMethod" value="카드" onchange="renderPay()"><span>💳 카드결제<small class="vatNotice">부가세 <span class="txtVatRate"></span> 추가</small><small class="noVatNotice" style="display:none;">페이앱 안전결제창</small></span></label>
-      </div>
-      <div id="payBank">
-        <div class="acct" style="margin-top:12px;">
-          <div>
-            <div class="num">3333-18-3356907</div>
-            <div class="bank">카카오뱅크 · 김푸름</div>
-          </div>
-          <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+      <h2>💳 결제 정보</h2>
+      <div class="acct">
+        <div>
+          <div class="num">3333-18-3356907</div>
+          <div class="bank">카카오뱅크 · 김푸름</div>
         </div>
-        <p class="muted" style="margin-top:8px;">✔️ 위 <b>총 결제 금액</b>을 <b>닉네임으로</b> 입금해주세요.</p>
+        <button class="btn-copy" onclick="copyAcct(this)">복사</button>
       </div>
-      <div id="payCard" style="display:none;">
-        <p class="vatNotice" style="margin-top:12px;font-weight:800;color:var(--danger);font-size:14px;text-align:center;">💳 카드는 부가세 <span class="txtVatRate"></span> 포함가입니다</p>
-        <p class="muted" style="margin-top:8px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;line-height:1.6;">
-          ✔️ <b>주문하기</b>를 누르면 결제 화면이 뜹니다. <b>카드로 결제하기</b> 버튼을 눌러 결제를 완료해주세요.<br>
-          ✔️ 결제 후 <b>확인</b>을 누르면 주문서로 돌아옵니다. 카드결제는 별도 입금이 필요 없어요.
-        </p>
-      </div>
+      <p class="muted" style="margin-top:8px;">✔️ 위 <b>총 입금 금액</b>을 <b>닉네임으로</b> 입금해주세요.</p>
     </div>
 
     <div class="card">
@@ -395,52 +351,28 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
       <div id="summaryBox" class="muted">상품을 담으면 구매내역이 자동으로 표시됩니다.</div>
     </div>
 
-    <button class="btn btn-primary" id="btnSubmit" onclick="submitOrder()">✈ 주문하기</button>
+    <button class="btn btn-primary" onclick="submitOrder()">✈ 주문하기</button>
     <button class="btn btn-ghost" onclick="clearSaved()">↻ 저장된 고객정보 지우기</button>
   </div>
 
   <!-- ============ 화면 3 : 완료 ============ -->
   <div id="screenDone">
     <div class="done-check">✓</div>
-    <h2 id="doneTitle">주문이 완료되었습니다</h2>
-    <p class="sub" id="doneSub">르미에 주문이 정상적으로 접수되었습니다.</p>
+    <h2>주문이 완료되었습니다</h2>
+    <p class="sub">르미에 주문이 정상적으로 접수되었습니다.</p>
     <div class="done-amount">
-      <div class="lbl" id="doneLbl">이번 주문 입금 금액</div>
+      <div class="lbl">이번 주문 입금 금액</div>
       <div class="amt" id="doneAmt">0원</div>
     </div>
-
-    <!-- 계좌이체 -->
-    <div id="doneBank">
-      <div class="acct" style="margin-bottom:16px;">
-        <div>
-          <div class="num">3333-18-3356907</div>
-          <div class="bank">카카오뱅크 · 김푸름 (닉네임으로 입금)</div>
-        </div>
-        <button class="btn-copy" onclick="copyAcct(this)">복사</button>
+    <div class="acct" style="margin-bottom:16px;">
+      <div>
+        <div class="num">3333-18-3356907</div>
+        <div class="bank">카카오뱅크 · 김푸름 (닉네임으로 입금)</div>
       </div>
+      <button class="btn-copy" onclick="copyAcct(this)">복사</button>
     </div>
-
-    <!-- 카드결제 -->
-    <div id="doneCard" style="display:none;">
-      <a class="btn btn-primary" id="btnPay" href="#" style="text-decoration:none;margin-bottom:10px;font-size:17px;">💳 카드로 결제하기</a>
-      <p class="muted" id="payHint" style="margin-bottom:16px;line-height:1.6;">결제창에서 카드 결제를 마치고 <b>확인</b>을 누르면 이 주문서로 돌아옵니다.<br>결제 전까지는 주문이 <b>결제 대기</b> 상태예요.</p>
-      <button class="btn btn-outline" onclick="editPending()" style="margin-bottom:6px;">🛒 상품 추가·수정하고 다시 주문하기</button>
-      <p class="muted" style="margin:0 0 16px;font-size:12.5px;line-height:1.5;">결제 전이라면 담긴 상품을 고쳐서 다시 주문할 수 있어요. 이전 결제요청은 자동으로 취소됩니다.</p>
-      <div id="payFail" style="display:none;background:#FBF3F1;border:1px solid #E7C8C0;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13.5px;color:var(--danger);line-height:1.6;">
-        결제창을 만들지 못했습니다. <span id="payFailMsg"></span><br>
-        <button class="btn-copy" style="margin-top:8px;" onclick="getPayLink(true)">🔄 다시 시도</button>
-        <div style="margin-top:8px;color:var(--ink);">또는 아래 계좌로 <b>닉네임 입금</b>도 가능합니다.</div>
-        <div class="acct" style="margin-top:8px;"><div><div class="num">3333-18-3356907</div><div class="bank">카카오뱅크 · 김푸름</div></div><button class="btn-copy" onclick="copyAcct(this)">복사</button></div>
-      </div>
-    </div>
-
-    <!-- 카드결제 완료 후 복귀 -->
-    <div id="donePaid" style="display:none;">
-      <p style="background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:16px;font-size:14px;line-height:1.6;">✅ 카드 결제가 확인되었습니다.<br><span class="muted">결제 내역은 페이앱에서 문자 · 카카오톡으로도 안내됩니다.</span></p>
-    </div>
-
     <a class="btn btn-outline" href="lookup.html" style="text-decoration:none;margin-bottom:10px;">📋 내 주문 조회</a>
-    <button class="btn btn-outline" onclick="location.href=location.pathname">＋ 추가 주문하기</button>
+    <button class="btn btn-outline" onclick="location.reload()">＋ 추가 주문하기</button>
     <p class="test-note" id="testNote">※ 구글시트 연동 전 테스트 모드입니다. 주문이 실제로 전송되지 않았습니다.</p>
   </div>
 
@@ -458,10 +390,6 @@ const CONFIG = {
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
   // 이 금액(원) 이상 구매 시 무료배송
   FREE_SHIP_MIN: 150000,
-  // 카드결제 시 상품금액에 붙는 부가세 비율 (0.10 = 10%, 0 이면 안 붙음)
-  CARD_VAT_RATE: 0.10,
-  // 카드 결제 후 돌아올 주문서 파일명 (Apps Script가 이 이름으로 복귀 주소를 만듦)
-  RETURN_PAGE: "pleats",
 };
 
 /* ================================================================
@@ -469,82 +397,8 @@ const CONFIG = {
    ================================================================ */
 let cart = [];
 let submitting = false;
-let currentOid = "", currentPayUrl = "";
 const $ = id => document.getElementById(id);
 const fmt = n => n.toLocaleString("ko-KR") + "원";
-
-/* ---------- 담은 상품 · 미결제 카드주문 기억하기 (같은 기기에서 다시 열면 이어서 주문) ---------- */
-const CART_KEY = "lumie_plu_cart", PENDING_KEY = "lumie_plu_pending";
-function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
-function clearCartStore(){ try{ localStorage.removeItem(CART_KEY); }catch(e){} }
-function getPending(){ try{ const p = JSON.parse(localStorage.getItem(PENDING_KEY) || "null"); return (p && p.oid) ? p : null; }catch(e){ return null; } }
-function setPending(p){ try{ p ? localStorage.setItem(PENDING_KEY, JSON.stringify(p)) : localStorage.removeItem(PENDING_KEY); }catch(e){} }
-function showPendingNote(show){
-  const p = getPending();
-  const on = !!(show && p);
-  $("pendingNote").style.display = on ? "block" : "none";
-  $("pendingTop").style.display = on ? "block" : "none";
-  $("btnPrevPay").style.display = (on && p.payurl) ? "inline-block" : "none";
-  $("btnPrevPayTop").style.display = (on && p.payurl) ? "inline-block" : "none";
-}
-function scrollToCart(){ const el = $("cartList"); if(el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }
-function openPrevPay(){ const p = getPending(); if(p && p.payurl) location.href = p.payurl; }
-function discardPending(){
-  if(!confirm("담긴 상품을 비우고 처음부터 다시 담을까요?\n(이미 결제하신 주문은 그대로 유지됩니다)")) return;
-  setPending(null); cart = []; clearCartStore(); renderCart(); showPendingNote(false);
-}
-// 완료 화면(카드 결제 전)에서 "상품 추가·수정" → 주문서로 되돌아감. 다시 주문하면 이전 결제요청은 서버에서 '대체됨' 처리
-function editPending(){
-  submitting = false;
-  $("screenDone").style.display = "none";
-  $("screenOrder").style.display = "block";
-  renderCart(); showPendingNote(true);
-  window.scrollTo(0,0);
-}
-// 주문서 시작 시: 저장된 장바구니 복원 → 이전 카드주문이 이미 결제됐으면 비움
-async function restoreCart(){
-  let saved = [];
-  try{ saved = JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }catch(e){}
-  let p = getPending();
-  if(p && Date.now() - (p.ts || 0) > 2 * 86400000){ setPending(null); p = null; }   // 이틀 지난 건 잊음
-  if(Array.isArray(saved) && saved.length && !cart.length){
-    cart = saved.filter(c => c && c.name && Number(c.qty) > 0)
-                .map(c => ({ name: String(c.name), price: Number(c.price) || 0, color: String(c.color || ""), qty: Number(c.qty) || 1 }));
-    renderCart();
-    if(p) showPendingNote(true);
-  }
-  if(!p || !CONFIG.SHEET_URL) return;
-  const snapshot = JSON.stringify(cart);
-  try{
-    const res = await fetch(CONFIG.SHEET_URL + "?mode=paystate&o=" + encodeURIComponent(p.oid) + "&t=" + Date.now());
-    const j = await res.json();
-    if(j.ok && (j.paid || j.replaced)){
-      setPending(null);
-      if(j.paid && JSON.stringify(cart) === snapshot){ cart = []; clearCartStore(); renderCart(); }   // 결제 끝난 주문 → 장바구니 비움
-      showPendingNote(false);
-    }else if(j.ok && j.payurl){
-      p.payurl = j.payurl; setPending(p); showPendingNote(true);
-    }
-  }catch(e){}
-}
-
-/* ---------- 결제 방법 (계좌이체 / 카드) ---------- */
-(function initPay(){
-  const hasVat = CONFIG.CARD_VAT_RATE > 0;
-  document.querySelectorAll(".txtVatRate").forEach(el => el.textContent = Math.round(CONFIG.CARD_VAT_RATE * 100) + "%");
-  document.querySelectorAll(".vatNotice").forEach(el => { if(!hasVat) el.style.display = "none"; });
-  document.querySelectorAll(".noVatNotice").forEach(el => { if(!hasVat) el.style.display = "block"; });
-})();
-function payMethod(){ const r = document.querySelector("input[name=payMethod]:checked"); return r ? r.value : "계좌이체"; }
-function renderPay(){
-  const card = payMethod() === "카드";
-  $("payBank").style.display = card ? "none" : "block";
-  $("payCard").style.display = card ? "block" : "none";
-  $("btnSubmit").textContent = card ? "💳 주문하고 카드결제하기" : "✈ 주문하기";
-  renderCart();
-}
-function cardVat(){ return (payMethod() === "카드" && cart.length) ? Math.round(goodsTotal() * CONFIG.CARD_VAT_RATE) : 0; }
-function payTotal(){ return goodsTotal() + shipFee() + cardVat(); }
 
 function copyAcct(btn){
   navigator.clipboard.writeText("3333-18-3356907").then(()=>{
@@ -557,7 +411,6 @@ function startOrder(){
   $("screenGate").style.display = "none";
   $("screenOrder").style.display = "block";
   loadSaved();
-  restoreCart();
   window.scrollTo(0,0);
 }
 
@@ -632,11 +485,8 @@ function renderCart(){
   $("sumCount").textContent = cnt + "개";
   $("sumGoods").textContent = fmt(goodsTotal());
   $("sumShip").textContent  = (cart.length && isAddl()) ? "무료 (추가 주문)" : isFreeShip() ? "무료 🎉" : fmt(shipFee());
-  $("vatRow").style.display = (payMethod() === "카드" && CONFIG.CARD_VAT_RATE > 0) ? "flex" : "none";
-  $("sumVat").textContent = fmt(cardVat());
-  $("sumTotal").textContent = fmt(payTotal());
+  $("sumTotal").textContent = fmt(goodsTotal()+shipFee());
   renderSummary();
-  saveCart();
 }
 function renderSummary(){
   if(!cart.length){
@@ -647,7 +497,7 @@ function renderSummary(){
   $("summaryBox").className = "";
   $("summaryBox").innerHTML =
     cart.map(c=>`· ${c.name} (${c.color}) × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
-    `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}<br>· 결제 ${payMethod()}${cardVat() ? " (부가세 " + fmt(cardVat()) + ")" : ""}<br><b>합계 ${fmt(payTotal())}</b>`;
+    `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}<br><b>합계 ${fmt(goodsTotal()+shipFee())}</b>`;
 }
 
 /* ---------- 주소 검색 (다음 우편번호) ---------- */
@@ -703,13 +553,6 @@ function clearSaved(){
 }
 
 /* ---------- 주문 전송 ---------- */
-function makeOid(){
-  const d = new Date();
-  const pad = n => String(n).padStart(2,"0");
-  const rnd = Math.random().toString(36).slice(2,6).toUpperCase();
-  return "M" + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + rnd;
-}
-
 async function submitOrder(){
   if(submitting) return; // 중복 전송 방지
   if(!cart.length){ alert("담긴 상품이 없습니다. 상품을 먼저 담아주세요."); return; }
@@ -717,21 +560,12 @@ async function submitOrder(){
   for(const [id,label] of need){
     if(!$(id).value.trim()){ alert(label + "을(를) 입력해주세요."); $(id).focus(); return; }
   }
-  const pay = payMethod();
-  if(pay === "카드" && !/^01[016789]\d{7,8}$/.test($("cPhone").value.replace(/[^0-9]/g,""))){
-    alert("카드결제는 휴대폰 번호(010-0000-0000)가 필요합니다. 연락처를 확인해주세요."); $("cPhone").focus(); return;
-  }
-  if(pay === "카드" && payTotal() < 1000){
-    alert("카드결제는 1,000원 이상부터 가능합니다."); return;
-  }
   if(isAddl() && localStorage.getItem("lumie_last_order") !== todayStr()){
     if(!confirm("배송비가 '추가 주문 (배송비 없음)'으로 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 주문할까요?")) return;
   }
   submitting = true;
   saveCustomer();
 
-  const prevPending = getPending();
-  currentOid = makeOid();
   const order = {
     time: new Date().toLocaleString("ko-KR"),
     nick: $("cNick").value.trim(),
@@ -744,12 +578,8 @@ async function submitOrder(){
     items: "[플리츠] " + cart.map(c=>`${c.name}(${c.color})x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
     goods: goodsTotal(),
     ship: shipFee(),
-    vat: cardVat(),                 // 카드 부가세 (계좌이체면 0)
-    total: payTotal(),              // 상품 + 배송비 + 카드부가세
+    total: goodsTotal()+shipFee(),
     agree: "교환·반품 불가 규정 동의",
-    pay: pay,             // 계좌이체 / 카드
-    oid: currentOid,      // 주문번호 (카드결제 매칭용)
-    replace: (prevPending && prevPending.oid !== currentOid) ? prevPending.oid : "",   // 결제 안 한 이전 카드주문 → 서버에서 '대체됨' 처리
   };
 
   $("loading").classList.add("show");
@@ -764,88 +594,20 @@ async function submitOrder(){
       sent = true;
     }catch(e){ console.error(e); }
   }
+  $("loading").classList.remove("show");
 
   if(CONFIG.SHEET_URL && !sent){
-    $("loading").classList.remove("show");
     submitting = false;
     alert("주문 전송에 실패했습니다. 네트워크 확인 후 다시 시도해주세요.");
     return;
   }
   $("doneAmt").textContent = fmt(order.total);
   try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
-  if(pay === "카드"){ setPending({ oid: currentOid, ts: Date.now(), payurl: "" }); saveCart(); }   // 결제 전 → 장바구니 유지
-  else { setPending(null); cart = []; clearCartStore(); }                                            // 계좌이체 → 접수 완료
-  showPendingNote(false);
   if(!CONFIG.SHEET_URL) $("testNote").style.display = "block";
-
-  if(pay === "카드"){
-    $("doneLbl").textContent = "카드 결제 금액" + (CONFIG.CARD_VAT_RATE > 0 ? " (부가세 " + Math.round(CONFIG.CARD_VAT_RATE*100) + "% 포함)" : "");
-    $("doneSub").textContent = "아래 버튼으로 카드 결제를 진행해주세요.";
-    $("doneBank").style.display = "none";
-    $("doneCard").style.display = "block";
-    $("btnPay").textContent = "결제창 준비 중…";
-    $("btnPay").style.opacity = ".5";
-  }else{
-    $("doneLbl").textContent = "이번 주문 입금 금액";
-    $("doneBank").style.display = "block";
-    $("doneCard").style.display = "none";
-  }
-  $("loading").classList.remove("show");
   $("screenOrder").style.display = "none";
   $("screenDone").style.display = "block";
   window.scrollTo(0,0);
-
-  if(pay === "카드") getPayLink(false);
 }
-
-/* ---------- 페이앱 결제URL 받기 (주문 저장 직후 / 실패 시 재시도) ---------- */
-async function getPayLink(manual){
-  if(!currentOid) return;
-  $("payFail").style.display = "none";
-  $("btnPay").textContent = "결제창 준비 중…"; $("btnPay").style.opacity = ".5"; $("btnPay").href = "#";
-  let lastMsg = "";
-  for(let i = 0; i < 4; i++){
-    try{
-      const res = await fetch(CONFIG.SHEET_URL + "?mode=paylink&o=" + encodeURIComponent(currentOid) + "&r=" + encodeURIComponent(CONFIG.RETURN_PAGE) + "&t=" + Date.now());
-      const j = await res.json();
-      if(j.ok && j.payurl){
-        currentPayUrl = j.payurl;
-        { const pp = getPending(); if(pp && pp.oid === currentOid){ pp.payurl = j.payurl; setPending(pp); } }
-        $("btnPay").href = j.payurl; $("btnPay").textContent = "💳 카드로 결제하기 (" + $("doneAmt").textContent + ")"; $("btnPay").style.opacity = "1";
-        return;
-      }
-      lastMsg = j.msg || "";
-      if(!j.retry) break;
-    }catch(e){ lastMsg = "통신 오류"; }
-    await new Promise(r => setTimeout(r, 1500));
-  }
-  $("btnPay").textContent = "결제창 생성 실패";
-  $("payFailMsg").textContent = lastMsg;
-  $("payFail").style.display = "block";
-}
-
-/* ---------- 카드 결제 후 주문서로 돌아온 경우 (?paid=주문번호) ---------- */
-(async function checkReturn(){
-  const m = location.search.match(/[?&]paid=([^&]+)/);
-  if(!m) return;
-  const oid = decodeURIComponent(m[1]);
-  { const pp = getPending(); if(!pp || pp.oid === oid){ setPending(null); clearCartStore(); cart = []; } }
-  $("screenGate").style.display = "none";
-  $("screenOrder").style.display = "none";
-  $("screenDone").style.display = "block";
-  $("doneTitle").textContent = "카드 결제가 완료되었습니다";
-  $("doneSub").textContent = "주문번호 " + oid;
-  $("doneLbl").textContent = "결제 금액";
-  $("doneAmt").textContent = "확인 중…";
-  $("doneBank").style.display = "none";
-  $("doneCard").style.display = "none";
-  $("donePaid").style.display = "block";
-  try{
-    const res = await fetch(CONFIG.SHEET_URL + "?mode=payreturn&o=" + encodeURIComponent(oid) + "&t=" + Date.now());
-    const j = await res.json();
-    $("doneAmt").textContent = j.ok ? fmt(Number(j.total)||0) : "-";
-  }catch(e){ $("doneAmt").textContent = "-"; }
-})();
 </script>
 </body>
 </html>
