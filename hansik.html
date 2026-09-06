@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>르미에 한식 밀키트 주문서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --ink:#1f1a17; --ink2:#5c5350; --line:#e6ded4; --paper:#faf7f2; --card:#fff;
+  --red:#b4332b; --red2:#8f2620; --soy:#4a2f21; --ok:#2e7d4f; --warn:#b26a00;
+  --shadow:0 1px 0 rgba(31,26,23,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:var(--paper);color:var(--ink);line-height:1.45;font-size:15px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.wrap{max-width:560px;margin:0 auto;padding:0 14px 140px}
+
+/* 헤더 */
+.hd{padding:22px 0 12px;border-bottom:2px solid var(--ink)}
+.hd .brand{font-size:12px;letter-spacing:.06em;color:var(--ink2)}
+.hd h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+.hd h1 em{font-style:normal;color:var(--red)}
+.hd .sub{font-size:13px;color:var(--ink2);margin-top:4px}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);margin-top:8px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+.live.off i{background:#bbb}
+
+/* 안내 게이트 */
+.gate{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.gate h2{font-size:16px;font-weight:700;margin-bottom:10px}
+.shipnote{background:#fdf4f2;border:1.5px solid #e9c9c3;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:14.5px;line-height:1.5}
+.shipnote b{color:var(--red)}
+.shipnote span{font-size:13px;color:var(--ink2)}
+.gate ol{padding-left:18px;font-size:14px;color:var(--ink2)}
+.gate li{margin:6px 0}
+.gate label{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px;font-weight:600}
+.gate input{width:18px;height:18px;margin-top:2px}
+.btn{display:block;width:100%;padding:15px;border-radius:12px;font-weight:700;font-size:16px;text-align:center;text-decoration:none}
+.btn.p{background:var(--red);color:#fff}
+.btn.p:disabled{background:#d8cfc6;color:#fff;cursor:not-allowed}
+.btn.g{background:#efe9e1;color:var(--ink)}
+.mt{margin-top:14px}
+
+/* 검색·카테고리 */
+.tools{position:sticky;top:0;z-index:5;background:var(--paper);padding:10px 0 8px;margin:0 -14px;padding-left:14px;padding-right:14px}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px;height:44px}
+.search input{flex:1;border:0;outline:0;background:transparent;font-size:15px}
+.search input::placeholder{color:#a79d95}
+.search button{color:var(--ink2);font-size:13px}
+.cats{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{flex:0 0 auto;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;color:var(--ink2);white-space:nowrap}
+.cat.on{background:var(--soy);color:#fff;border-color:var(--soy)}
+
+/* 상품 */
+.sec{margin-top:16px}
+.sec h3{font-size:13px;font-weight:700;color:var(--ink2);padding:0 2px 6px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;padding:12px 12px;margin-bottom:6px;box-shadow:var(--shadow)}
+.item .th{width:64px;height:64px;border-radius:10px;object-fit:cover;flex:0 0 64px;background:#f1ece5;cursor:zoom-in}
+.item .th.none{display:flex;align-items:center;justify-content:center;font-size:11px;color:#b5aca4;cursor:default}
+.item .info{flex:1;min-width:0}
+.lb{position:fixed;inset:0;background:rgba(31,26,23,.88);display:none;align-items:center;justify-content:center;z-index:60;padding:20px;flex-direction:column;gap:12px}
+.lb.show{display:flex}
+.lb img{max-width:100%;max-height:75vh;border-radius:12px;background:#fff}
+.lb p{color:#fff;font-size:14px;text-align:center;font-weight:600}
+.lb span{color:#cfc6bc;font-size:12px}
+.item .nm{font-size:14.5px;font-weight:600;line-height:1.35;word-break:keep-all}
+.item .pr{font-size:15px;font-weight:800;margin-top:3px}
+.item .pr small{font-weight:500;color:var(--ink2);font-size:12px;margin-left:6px}
+.item .meta{font-size:12px;color:var(--ink2);margin-top:2px}
+.item.so{opacity:.5}
+.item.so .nm{text-decoration:line-through}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:1px}
+.tag.so{background:#eee;color:#777}
+.tag.few{background:#fff3e0;color:var(--warn)}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+.qty button{width:36px;height:36px;font-size:18px;font-weight:600;color:var(--ink)}
+.qty button:disabled{color:#ccc;cursor:default}
+.qty span{width:30px;text-align:center;font-weight:700;font-size:15px}
+.qty.has{border-color:var(--red)}
+.qty.has span{color:var(--red)}
+.empty{padding:40px 0;text-align:center;color:var(--ink2);font-size:14px}
+
+/* 하단 바 */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+.bar .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.bar .sum{flex:1}
+.bar .sum b{font-size:18px}
+.bar .sum small{display:block;font-size:12px;color:var(--ink2)}
+.bar button{padding:13px 22px;border-radius:12px;background:var(--red);color:#fff;font-weight:700;font-size:15px}
+.bar button:disabled{background:#d8cfc6}
+
+/* 장바구니·주문자 */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.panel h2{font-size:16px;font-weight:800;margin-bottom:10px}
+.crow{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.crow:last-of-type{border-bottom:0}
+.crow .nm{flex:1;font-size:14px;word-break:keep-all}
+.crow .amt{width:74px;text-align:right;font-weight:700;font-size:14px}
+.crow .qty button{width:30px;height:30px;font-size:15px}
+.crow .qty span{width:26px;font-size:14px}
+.tot{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:14px}
+.tot div{display:flex;justify-content:space-between;padding:3px 0}
+.tot .big{font-size:18px;font-weight:800;margin-top:4px}
+.tot .big span:last-child{color:var(--red)}
+.hint{font-size:12px;color:var(--ink2);margin-top:6px}
+.f{margin-top:12px}
+.f label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.f label i{color:var(--red);font-style:normal}
+.f input,.f textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;background:#fff;outline:0}
+.f input:focus,.f textarea:focus{border-color:var(--soy)}
+.f textarea{min-height:70px;resize:vertical}
+.zip{display:flex;gap:8px}
+.zip input{flex:1}
+.zip button{padding:0 14px;border-radius:10px;background:#efe9e1;font-weight:600;font-size:14px;white-space:nowrap}
+.payopt{display:flex;gap:8px;margin-top:4px}
+.payopt label{flex:1;display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:12px;padding:11px 10px;cursor:pointer;background:#fff;font-size:14px;font-weight:700}
+.payopt label:has(input:checked){border-color:var(--red);background:#fdf4f2}
+.payopt input{width:18px;height:18px;accent-color:var(--red);flex:0 0 auto}
+.payopt small{display:block;font-weight:500;font-size:11.5px;color:var(--ink2);margin-top:2px}
+.acct{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f4efe8;border-radius:10px;padding:12px;margin-top:10px}
+.acct .num{font-size:17px;font-weight:800;letter-spacing:.02em}
+.acct .bank{font-size:12px;color:var(--ink2);margin-top:2px}
+.acct button{padding:7px 12px;border-radius:8px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:600}
+.vatline{margin-top:10px;font-weight:800;color:var(--red);font-size:14px;text-align:center}
+.chk{display:flex;gap:8px;align-items:center;font-size:13.5px;margin-top:10px;font-weight:600}
+.chk input{width:18px;height:18px;accent-color:var(--red)}
+.fail{background:#fbf3f1;border:1px solid #e7c8c0;border-radius:10px;padding:12px;margin-top:12px;font-size:13.5px;color:var(--red);line-height:1.6;text-align:left}
+.pend{position:sticky;top:0;z-index:20;background:#fff8e6;border-bottom:2px solid #e6b422;padding:12px 14px;margin:0 -14px 10px;display:none}
+.pend.show{display:block}
+.pend .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.pend .tx{flex:1;font-size:13.5px;line-height:1.45}
+.pend .tx b{color:var(--red)}
+.pend .tx small{display:block;color:var(--ink2);font-size:12px}
+.pend a{flex:0 0 auto;background:var(--red);color:#fff;font-weight:700;font-size:13.5px;padding:10px 14px;border-radius:10px;text-decoration:none;white-space:nowrap}
+.pend button{flex:0 0 auto;font-size:12px;color:var(--ink2);text-decoration:underline;padding:4px}
+.notice{font-size:13px;color:var(--ink2);background:#f4efe8;border-radius:10px;padding:10px 12px;margin-top:12px;line-height:1.5}
+.link{color:var(--red);text-decoration:underline}
+
+/* 완료 */
+.done{text-align:center;padding:60px 10px}
+.done .ck{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;font-size:34px;line-height:64px;margin:0 auto 18px}
+.done h2{font-size:22px;font-weight:800}
+.done .amt{font-size:30px;font-weight:900;color:var(--red);margin:14px 0 4px}
+.done p{color:var(--ink2);font-size:14px;margin-top:6px}
+.done .box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:18px 0;text-align:left;font-size:14px}
+.done .box b{display:block;font-size:16px;margin-bottom:4px}
+
+/* 로딩 */
+.ov{position:fixed;inset:0;background:rgba(250,247,242,.85);display:none;align-items:center;justify-content:center;z-index:50;font-weight:700;color:var(--ink2);flex-direction:column;gap:10px}
+.ov.show{display:flex}
+.sp{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;white-space:nowrap}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.sp{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="pend" id="pend"><div class="in">
+  <div class="tx">💳 <b>결제 대기 중인 주문</b>이 있어요<small id="pendNo"></small><small>결제하지 않으면 접수되지 않아요. 상품을 바꾸려면 그냥 새로 주문하면 이전 주문은 자동으로 취소돼요.</small></div>
+  <a id="pendPay" href="#" target="_blank">결제하기</a>
+  <button type="button" onclick="dropPending()">지우기</button>
+</div></div>
+
+<div class="hd">
+  <div class="brand">르미에 라이브</div>
+  <h1>르미에 <em>한식 밀키트</em> 주문서</h1>
+  <div class="sub">방송 중 실시간 재고로 운영됩니다</div>
+  <div class="live" id="live"><i></i><span>상품 불러오는 중…</span></div>
+</div>
+
+<!-- 1. 안내 -->
+<section id="sGate" class="gate">
+  <h2>주문 전 꼭 확인해주세요</h2>
+  <div class="shipnote">🚚 이번 방송 주문은 <b>다음주 수요일(9/9) 출고 예정</b>입니다.<br><span>입금·카드결제 확인된 주문만 출고되며, 도착은 출고 다음날부터 순차적으로 이루어져요.</span></div>
+  <ol>
+    <li>상품은 <b>냉동·냉장 식품</b>이라 수령 즉시 보관해주세요. 부재 시 문 앞 배송됩니다.</li>
+    <li>주문 후 <b>총 입금 금액</b>을 정확히 입금해주셔야 출고됩니다. 입금자명은 주문 시 닉네임과 같게 해주세요.</li>
+    <li>재고는 방송 중 실시간으로 바뀝니다. 품절 상품은 담을 수 없어요.</li>
+    <li>같은 날 여러 번 주문하셔도 배송비는 한 번만 청구됩니다. (정산 시 합배송 처리)</li>
+    <li>식품 특성상 <b>단순 변심 교환·환불이 어렵습니다.</b> 파손·오배송은 수령 당일 사진과 함께 연락주세요.</li>
+  </ol>
+  <label><input type="checkbox" id="agree"> 위 내용을 확인했고 동의합니다</label>
+  <button class="btn p mt" id="btnStart" disabled>주문서 작성하기</button>
+  <a class="btn g mt" href="lookup.html">내 주문 조회</a>
+</section>
+
+<!-- 2. 상품 선택 -->
+<section id="sList" style="display:none">
+  <div class="tools">
+    <div class="search">
+      <span>🔍</span>
+      <input id="q" placeholder="상품명 검색 (예: 떡볶이, 만두)" autocomplete="off">
+      <button id="qClear" style="display:none">지우기</button>
+    </div>
+    <div class="cats" id="cats"></div>
+  </div>
+  <div id="list"></div>
+</section>
+
+<!-- 3. 장바구니 + 주문자 -->
+<section id="sCart" style="display:none">
+  <button class="btn g mt" onclick="go('list')">← 상품 더 담기</button>
+
+  <div class="panel">
+    <h2>담은 상품</h2>
+    <div id="cartRows"></div>
+    <label class="chk"><input type="checkbox" id="addl" onchange="this.dataset.touched=1;renderCart()"> 오늘 이미 주문했어요 (추가 주문 · 배송비 없음)</label>
+    <div class="tot">
+      <div><span>상품 금액</span><span id="tGoods">0원</span></div>
+      <div><span>배송비</span><span id="tShip">0원</span></div>
+      <div id="vatRow" style="display:none"><span>카드 부가세 <span class="txtVatRate"></span></span><span id="tVat">0원</span></div>
+      <div class="big"><span id="tTotalLbl">총 입금 금액</span><span id="tTotal">0원</span></div>
+    </div>
+    <div class="hint" id="shipHint"></div>
+  </div>
+
+  <div class="panel">
+    <h2>결제 방법</h2>
+    <div class="payopt">
+      <label><input type="radio" name="payMethod" value="계좌이체" checked onchange="renderPay()"><span>🏦 계좌이체<small>카카오뱅크로 닉네임 입금</small></span></label>
+      <label><input type="radio" name="payMethod" value="카드" onchange="renderPay()"><span>💳 카드결제<small class="vatNotice">부가세 <span class="txtVatRate"></span> 추가</small><small class="noVatNotice" style="display:none">페이앱 안전결제</small></span></label>
+    </div>
+    <div id="payBank">
+      <div class="acct"><div><div class="num" id="acctNum"></div><div class="bank" id="acctBank"></div></div><button type="button" onclick="copyAcct(this)">복사</button></div>
+      <div class="hint">주문 완료 후 <b>총 입금 금액</b>을 닉네임으로 입금해주세요.</div>
+    </div>
+    <div id="payCard" style="display:none">
+      <div class="vatline vatNotice">💳 카드는 부가세 <span class="txtVatRate"></span> 포함가입니다</div>
+      <div class="hint">주문 접수 후 나오는 <b>카드로 결제하기</b> 버튼으로 결제를 마쳐주세요. 결제 전까지는 결제 대기 상태이며, 별도 입금은 필요 없어요.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>주문자 정보</h2>
+    <div class="hint" id="savedHint" style="display:none">이전에 입력한 정보를 불러왔어요. <a class="link" href="#" onclick="clearSaved();return false">지우기</a></div>
+    <div class="f"><label>닉네임 <i>*</i></label><input id="cNick" placeholder="방송 닉네임 (입금자명과 동일하게)"></div>
+    <div class="f"><label>수령인 성함 <i>*</i></label><input id="cName" placeholder="받으시는 분 성함"></div>
+    <div class="f"><label>연락처 <i>*</i></label><input id="cPhone" inputmode="tel" placeholder="010-0000-0000"></div>
+    <div class="f"><label>주소 <i>*</i></label>
+      <div class="zip"><input id="cZip" placeholder="우편번호" readonly><button type="button" onclick="findAddr()">주소 검색</button></div>
+      <input id="cAddr" placeholder="기본 주소" style="margin-top:6px" readonly>
+      <input id="cAddr2" placeholder="상세 주소 (동·호수 등)" style="margin-top:6px">
+    </div>
+    <div class="f"><label>배송 메모</label><textarea id="cMemo" placeholder="공동현관 비밀번호, 부재 시 요청사항 등"></textarea></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px"><input type="checkbox" id="remember" checked> 다음 주문을 위해 이 정보 기억하기</label>
+  </div>
+
+  <div class="notice">입금(또는 카드 승인) 확인 후 순차 출고됩니다. 식품 특성상 단순 변심 교환·환불이 어렵습니다.</div>
+  <button class="btn p mt" id="btnSubmit" onclick="submitOrder()">주문 접수하기</button>
+</section>
+
+<!-- 4. 완료 -->
+<section id="sDone" class="done" style="display:none">
+  <div class="ck">✓</div>
+  <h2 id="doneTitle">주문이 접수되었습니다</h2>
+  <p id="doneLbl">이번 주문 입금 금액</p>
+  <div class="amt" id="doneAmt">0원</div>
+  <div id="doneBank">
+    <p>위 금액을 아래 계좌로 입금해주세요</p>
+    <div class="acct" style="text-align:left"><div><div class="num" id="acctNum2"></div><div class="bank" id="acctBank2"></div></div><button type="button" onclick="copyAcct(this)">복사</button></div>
+    <p style="font-size:13px">입금자명은 주문 닉네임과 동일하게 해주세요</p>
+  </div>
+  <div id="doneCard" style="display:none">
+    <a class="btn p mt" id="btnPay" href="#">결제창 준비 중…</a>
+    <p style="font-size:13px">결제창에서 카드 결제를 마치고 <b>확인</b>을 누르면 이 주문서로 돌아옵니다.<br>결제 전까지는 주문이 <b>결제 대기</b> 상태예요.</p>
+    <div class="fail" id="payFail" style="display:none">
+      결제창을 만들지 못했습니다. <span id="payFailMsg"></span><br>
+      <button type="button" class="btn g mt" style="padding:10px" onclick="getPayLink(true)">🔄 다시 시도</button>
+      <div style="margin-top:8px;color:var(--ink)">또는 아래 계좌로 <b>닉네임 입금</b>도 가능합니다.</div>
+      <div class="acct"><div><div class="num" id="acctNum3"></div><div class="bank" id="acctBank3"></div></div><button type="button" onclick="copyAcct(this)">복사</button></div>
+    </div>
+  </div>
+  <div id="donePaid" style="display:none">
+    <div class="box">✅ 카드 결제가 확인되었습니다.<br><span style="color:var(--ink2)">결제 내역은 페이앱에서 문자·카카오톡으로도 안내됩니다.</span></div>
+  </div>
+  <p id="doneNo" style="font-size:13px"></p>
+  <button class="btn g mt" onclick="location.href=location.pathname">추가 주문하기</button>
+  <a class="btn g mt" href="lookup.html">내 주문 조회</a>
+</section>
+
+</div>
+
+<!-- 하단 바 -->
+<div class="bar" id="bar" style="display:none">
+  <div class="in">
+    <div class="sum"><b id="barTotal">0원</b><small id="barCnt">담은 상품 없음</small></div>
+    <button id="barBtn" onclick="go('cart')" disabled>주문하기</button>
+  </div>
+</div>
+
+<div class="ov" id="ov"><div class="sp"></div><span id="ovMsg">처리 중입니다…</span></div>
+<div class="toast" id="toast"></div>
+<div class="lb" id="lb" onclick="this.classList.remove('show')"><img id="lbImg" alt=""><p id="lbName"></p><span>탭하면 닫힘</span></div>
+
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script>
+/* ============================================================
+   설정 — 방송 전에 여기만 확인하세요
+   ============================================================ */
+const CONFIG = {
+  SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
+  MODE: "mealkit",          // 시트 '밀키트' 탭을 읽는 모드 (기존 Apps Script 그대로 사용)
+  PAGE: "hansik",           // 주문접수에 함께 저장되는 주문서 구분값
+  SHIP_FEE: 5000,           // 기본 배송비
+  REMOTE_FEE: 7000,         // 제주·도서산간 배송비
+  FREE_SHIP_MIN: 50000,     // 이 금액 이상 무료배송 (0이면 무료배송 없음)
+  REFRESH_MS: 30000,        // 재고 자동 갱신 주기
+  ACCT_NUM: "3333-18-3356907",
+  ACCT_BANK: "카카오뱅크 · 김푸름",
+  CARD_VAT_RATE: 0.10,      // 카드결제 시 상품금액에 붙는 부가세 (0이면 안 붙고 문구도 사라짐)
+  RETURN_PAGE: "hansik",    // 카드 결제 후 돌아올 파일명 (Apps Script가 lumie-order/hansik.html 로 보내줌)
+  OID_PREFIX: "S",          // 주문번호 접두어 (만수르 M, 가방 B, 밀키트 S)
+};
+
+const $ = id => document.getElementById(id);
+/* ---------- 상품 사진 — 시트 제품명(공백 제거)으로 매칭 ---------- */
+const IMG_BASE = "https://sm-samiga11.godhub.kr/uploads/products/";
+const IMG = {
+  "국산고등어250g(실질350g)":"F20_1787819589511.webp",
+  "오징어까스500g(10장)":"F09_1787817658749.webp",
+  "오징어제육볶음300g":"E13_1787814489422.webp",
+  "쭈꾸미볶음양념300g(매운맛)":"F01_1787816442252.webp",
+  "쭈꾸미볶음양념300g(순한맛)":"F02_1787816448489.webp",
+  "살로만간장깐새우장25마리800g":"F13_1787818535905.webp",
+  "살로만양념깐새우장25마리800g":"F14_1787818597671.webp",
+  "[마법의딸기]프로즌수제청딸기베이스1kg1팩":"O16_1787836979610.webp",
+  "수정과1L":"O01_1787835459781.webp",
+  "복분자식혜1L":"O02_1787835574961.webp",
+  "전통식혜1L":"O03_1787836554656.webp",
+  "커큐민식혜1L":"O04_1787836578609.webp",
+  "호박식혜1L":"O05_1787836778964.webp",
+  "홍시식혜1L":"O06_1787836810368.webp",
+  "무카페인웰니스허브블렌드8종퍼플시리즈(종합차10개입)":"O09_1787836889893.webp",
+  "블랙티에스프레소Original500g밀크티파우더":"O08_1787836743364.webp",
+  "햇살바람사과생즙50개입":"O17_1787879566903.webp",
+  "햇살바람배생즙50개입":"O18_1787879743821.webp",
+  "햇살바람배도라지즙50개입":"O19_1787879790685.webp",
+  "데일리레몬수500ml24개입":"O15_1787836969259.webp",
+  "사미가한돈스테이크5팩":"E01_1787876416897.webp",
+  "한돈스테이크5팩":"E01_1787876416897.webp",
+  "사미가한우스테이크5팩":"E02_1787876509981.webp",
+  "한우스테이크5팩":"E02_1787876509981.webp",
+  "사미가꼬마수제피자스테이크4팩":"E03_1787876672864.webp",
+  "꼬마수제피자스테이크4팩":"E03_1787876672864.webp",
+  "사미가고추스테이크5팩":"E08_1787877291385.webp",
+  "고추스테이크5팩":"E08_1787877291385.webp",
+  "미스렐라치즈떡갈비5팩":"E06_1787876952704.webp",
+  "우리한돈알카츠(500g)":"E04_1787876877833.webp",
+  "압구정명품수제돈까스(110gx4)":"E07_1787877181544.webp",
+  "[쫀슐랭]방촌시장떡볶이":"L01_1787827856655.webp",
+  "매운몽땅떡볶이480g":"L02_1787827867979.webp",
+  "쫄깃쫄깃한쫄봉이355g(오리지널)[떡250g+분말스프45g+어묵60g]":"L03_1787827872948.webp",
+  "쫄깃쫄깃한쫄봉이로제295g[누들떡250g+분말스프45g]":"L04_1787827891803.webp",
+  "쫄깃쫄깃한쫄봉이짜장295g[누들떡250g+분말스프45g]":"L05_1787827907274.webp",
+  "쫄깃쫄깃한쫄봉이핫710g[(떡250g+분말스프45g+어묵60g)각2개씩]":"L06_1787827912607.webp",
+  "쫄봉이밀가래떡볶이550g[가래떡350g+액상소스100g+어묵100g]":"L07_1787828107121.webp",
+  "쫄봉이쌀가래떡볶이550g(국내산쌀)[가래떡350g+액상소스100g+어묵100g]":"L08_1787828479668.webp",
+  "납작만두600g":"L10_1787828023836.webp",
+  "당면만두600g":"L11_1787828033494.webp",
+  "땡초만두630g":"L12_1787828040958.webp",
+  "고기만두630g":"L13_1787828045696.webp",
+  "김치만두630g":"L14_1787828052312.webp",
+  "새우만두630g":"L15_1787828077321.webp",
+  "알품게포기김치3kg":"J09_1787824649188.webp",
+  "알품게열무물김치2kg":"J10_1787824659617.webp",
+  "알품게나박김치2kg":"J12_1787824688303.webp",
+  "알품게동치미2kg":"J13_1787824748784.webp",
+  "실비김치2kg":"J14_1787824755017.webp",
+  "베트남마카다미아200g":"B02_1787752637726.webp",
+  "견과김과자8개입":"B03_1787752653534.webp",
+  "동결건조과일통딸기50g":"B05_1787752546092.webp",
+  "동결건조과일파인애플50g":"B06_1787752552262.webp",
+  "동결건조과일망고50g":"B07_1787752598239.webp",
+  "동결건조과일바나바50g":"B08_1787752602736.webp",
+  "병아리콩(20개입)":"B09_1787806068215.webp",
+  "영양맛밤50g":"B10_1787806074519.webp",
+  "베노프3종딸기":"B23_1787806198923.webp",
+  "베노프3종청키":"B24_1787806208146.webp",
+  "베노프3종트러플":"B25_1787806215189.webp",
+  "[당연구소]카라멜팝콘":"A04_1787805526713.webp",
+  "[당연구소]스테비아파로현미뻥튀기":"A10_1787805959114.webp",
+  "[당연구소]스테비아호라산밀현미뻥튀기":"A11_1787805918858.webp",
+  "[당연구소]현미유카사바칩":"A05_1787805538861.webp",
+  "젠젠살몬칩오리지널":"A15_1787806002684.webp",
+  "젠젠살몬칩와사비":"A16_1787806009072.webp",
+  "젠젠살몬칩블랙트러블":"A17_1787806016405.webp",
+  "[쫀슐랭]쫀징어(매콤달콤)50g":"B17_1787806696080.webp",
+  "[쫀슐랭]쫀징어(오리지널)50g":"B18_1787806701966.webp",
+  "[쫀슐랭]쫀징어(핫불닭)50g":"B19_1787806773019.webp",
+  "들기름마제소바":"I01_1787878315289.webp",
+  "들기름막국수":"I02_1787822890842.webp",
+  "들깨칼국수":"I03_1787822894859.webp",
+  "들깨수제비":"K03_1787824943994.webp",
+  "들깨탕":"D35_1787812307227.webp",
+  "대동물냉면1인분":"I04_1787822899202.webp",
+  "빈타이포타베트남소고기쌀국수65g":"I23_1787823556458.webp",
+  "미리쫄탱가쓰오우동1인분":"I15_1787823436859.webp",
+  "미리쫄탱튀김맛우동1인분":"I16_1787823444054.webp",
+  "미리쫄탱해물맛우동1인분":"I17_1787823449615.webp",
+  "미리쫄탱짜장맛우동1인분":"I18_1787823455013.webp",
+  "우동사리1인분":"I14_1787823428364.webp",
+  "시카고피자갈릭크림치즈피자":"B27_1787806234427.webp",
+  "시카고피자단짠불고기피자":"B28_1787806241682.webp",
+  "시카고피자스윗고구마피자":"B29_1787806246647.webp",
+  "직화불고기길쭉이버거오리지널":"B35_1787806263177.webp",
+  "직화불고기길쭉이버거치즈":"B36_1787806275226.webp",
+  "직화불고기길쭉이버거핫소스":"B37_1787806281978.webp",
+  "우리나라웨지감자튀김500g":"B38_1787806394708.webp",
+  "통그리스피치킨350g":"B39_1787876063052.webp",
+  "베이바잇트모어그린소금빵(6개입)":"B40_1787806800509.webp",
+  "잠봉베이크드포테이토스프500g":"K05_1787830153249.webp",
+  "대게김16봉":"J15_1787824759567.webp",
+  "고성태명태회무침400g":"J04_1787824089740.webp",
+  "입술청양고추명란비밥장400g":"J07_1787824105171.webp",
+  "대동소막창200g":"E25_1787815948380.webp",
+  "진한맛이살아있는소곱창전골400g":"E23_1787815592593.webp",
+  "삼우미니족슬라이스600g":"E27_1787815992075.webp",
+  "우복당냉동편육(국산,500g)":"E26_1787816084439.webp",
+  "구이용듀록꽃삼겹살(스페인)4mm500g":"E29_1787816155530.webp",
+  "국내산명품LA갈비1cm500g":"E32_1787877915131.webp",
+  "국내산오돌뼈(연골)3cm500g":"E33_1787816300708.webp",
+  "한돈뽈항정살2mm300g":"E34_1787816342856.webp",
+  "한돈바싹불고기500g":"E05_1787877107595.webp",
+  "양념소불고기600g":"E22_1787877665498.webp",
+  "제주돼지제육볶음600g":"E10_1787814268982.webp",
+  "직화석쇠간장불고기200g":"E20_1787814724869.webp",
+  "직화석쇠고추장불고기200g":"E21_1787814900192.webp",
+  "동인동순살갈비찜400g간장맛":"E18_1787814704026.webp",
+  "동인동순살갈비찜400g매운맛":"E19_1787814676249.webp",
+  "청기와묵은지돼지갈비찜700g":"E16_1787814623731.webp",
+  "찐고추장불고기300g":"E14_1787814591410.webp",
+  "양념오돌뼈볶음300g":"E15_1787814602149.webp",
+  "고구마가래떡235g":"M08_1787834404415.webp",
+  "모짜렐라치즈가래떡500g":"M09_1787834601163.webp",
+  "구워먹는치즈바530g":"M10_1787834845439.webp",
+  "구워먹는치즈바단호박530g":"M11_1787834965371.webp",
+  "우복살균삼계탕국산1kg":"G08_1787822611835.webp",
+  "청담닭발700g":"G03_1787820614219.webp",
+  "짬닭연구소간장찜닭700g":"G04_1787820849990.webp",
+  "짬닭연구소로제찜닭700g":"G05_1787820868981.webp",
+  "짬닭연구소카레찜닭700g":"G06_1787820919148.webp",
+  "100%닭다리살로만만들어진찐맛닭갈비300g":"G01_1787820416456.webp",
+  "캠핑음식국물닭발무뼈닭발400g":"G02_1787820484415.webp",
+  "들깨삼계탕국산1.2kg":"G07_1787822608008.webp",
+  "캠핑돼지수육국밥":"D01_1787807059980.webp",
+  "캠핑얼큰돼지수육국밥":"D02_1787807218178.webp",
+  "캠핑내장국밥120g":"D03_1787807414709.webp",
+  "캠핑얼큰내장국밥155g":"D04_1787807513812.webp",
+  "캠핑술국":"D05_1787807564709.webp",
+  "캠핑육개장":"D06_1787807615950.webp",
+  "캠핑소머리곰탕110g":"D07_1787807674242.webp",
+  "캠핑얼큰양곰탕185g":"D08_1787807730246.webp",
+  "부산해운대낙곱새450g":"D19_1787811966373.webp",
+  "신의주순대국얼큰오리지널":"D22_1787812041324.webp",
+  "신의주순대국담백한맛":"D23_1787812050832.webp",
+  "대동한우국밥600g":"D09_1787808189627.webp",
+  "대동육개장600g":"D10_1787808193994.webp",
+  "뚝배기부대찌개550g":"D11_1787809999128.webp",
+  "푸짐한부대찌개600g":"D12_1787810014787.webp",
+  "뚝배기불고기500g":"D13_1787810018971.webp",
+  "본갈비탕600g":"D14_1787810022783.webp",
+  "영양갈비탕700g":"D15_1787810120476.webp",
+  "설렁탕(호주산소고기)600g":"D16_1787810064754.webp",
+  "황태해장국600g":"D17_1787810140787.webp",
+  "뼈해장국900g":"D18_1787810147549.webp",
+  "오모가리김치찌개500g":"D20_1787811995522.webp",
+  "오모가리참치김치찌개500g":"D21_1787812004222.webp",
+  "한마리꽃게탕350g":"D32_1787812192301.webp",
+  "제대로알탕730g":"D30_1787812125001.webp",
+  "[쥬비스]아미노젤리(1boxX14)":"C01_1787806819309.webp"
+};
+function imgOf(name){ const k = String(name).replace(/\s/g,""); return IMG[k] ? IMG_BASE + IMG[k] : ""; }
+
+const fmt = n => n.toLocaleString("ko-KR") + "원";
+let PRODUCTS = [];            // 시트에서 불러온 상품 (name, price, coupang, stock, exp, status, desc)
+let cart = {};                // { name: qty }
+let curCat = "전체";
+let query = "";
+let lastOk = null;
+const CART_KEY = "hansik_cart_v1", CUST_KEY = "lumie_customer", PENDING_KEY = "lumie_hansik_pending";
+let currentOid = "";
+
+/* ---------- 결제 방법 (계좌이체 / 카드) ---------- */
+(function initPay(){
+  const rate = Math.round(CONFIG.CARD_VAT_RATE * 100) + "%";
+  document.querySelectorAll(".txtVatRate").forEach(el => el.textContent = rate);
+  if(!(CONFIG.CARD_VAT_RATE > 0)){
+    document.querySelectorAll(".vatNotice").forEach(el => el.style.display = "none");
+    document.querySelectorAll(".noVatNotice").forEach(el => el.style.display = "block");
+  }
+  ["acctNum","acctNum2","acctNum3"].forEach(id => $(id).textContent = CONFIG.ACCT_NUM);
+  ["acctBank","acctBank2","acctBank3"].forEach(id => $(id).textContent = CONFIG.ACCT_BANK);
+})();
+function payMethod(){ const r = document.querySelector("input[name=payMethod]:checked"); return r ? r.value : "계좌이체"; }
+function renderPay(){
+  const card = payMethod() === "카드";
+  $("payBank").style.display = card ? "none" : "block";
+  $("payCard").style.display = card ? "block" : "none";
+  $("btnSubmit").textContent = card ? "💳 주문하고 카드결제하기" : "주문 접수하기";
+  renderCart();
+}
+function cardVat(){ return (payMethod() === "카드" && cartCount()) ? Math.round(goodsTotal() * CONFIG.CARD_VAT_RATE) : 0; }
+function payTotal(){ return goodsTotal() + shipFee() + cardVat(); }
+function copyAcct(btn){
+  navigator.clipboard.writeText(CONFIG.ACCT_NUM).then(()=>{ const t = btn.textContent; btn.textContent = "복사됨✓"; setTimeout(()=>btn.textContent = t, 1500); }).catch(()=>{});
+}
+function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function isAddl(){ return $("addl").checked; }
+function getPending(){ try{ return localStorage.getItem(PENDING_KEY) || ""; }catch(e){ return ""; } }
+function setPending(oid){ try{ oid ? localStorage.setItem(PENDING_KEY, oid) : localStorage.removeItem(PENDING_KEY); }catch(e){} }
+// 오늘 이미 (결제까지 된) 주문이 있으면 true
+function orderedToday(){ try{ return localStorage.getItem("lumie_last_order") === todayStr() && !getPending(); }catch(e){ return false; } }
+function makeOid(){
+  const d = new Date(), pad = n => String(n).padStart(2,"0");
+  const rnd = Math.random().toString(36).slice(2,6).toUpperCase();
+  return CONFIG.OID_PREFIX + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + rnd;
+}
+
+/* ---------- 상품 불러오기 (시트 실시간) ---------- */
+async function loadProducts(silent){
+  try{
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=" + CONFIG.MODE + "&t=" + Date.now());
+    const data = await res.json();
+    if(!Array.isArray(data)) throw new Error("bad data");
+    PRODUCTS = data.map(r => {
+      const st = String(r.status || "").trim();
+      // 재고: 시트 D열이 비어있거나 0이면 재고 관리 안 함(무제한). 1 이상이면 그 수량까지만.
+      // 품절은 판매상태(F열)에 "품절" 이라고 적으면 됨 (재고 자동차감 켜면 0 되는 순간 자동으로 품절이 적힘)
+      const stockNum = Number(r.stock);
+      const stock = (isNaN(stockNum) || stockNum <= 0) ? null : stockNum;   // null = 재고 관리 안 함
+      return {
+        name: String(r.name || "").trim(),
+        price: Number(r.price) || 0,
+        stock, exp: String(r.exp || "").trim(),
+        cat: String(r.desc || "").trim() || "기타",
+        hidden: /숨김|비공개/.test(st),
+        soldout: /품절/.test(st),
+      };
+    }).filter(p => p.name && p.price && !p.hidden);
+    lastOk = new Date();
+    setLive(true);
+    syncCartWithStock(!silent);
+    if(!silent) renderAll();
+    return true;
+  }catch(e){
+    console.error("상품 불러오기 실패", e);
+    setLive(false);
+    if(!PRODUCTS.length && !silent) $("list").innerHTML = '<div class="empty">상품을 불러오지 못했습니다.<br>네트워크 확인 후 새로고침해주세요.</div>';
+    return false;
+  }
+}
+function setLive(ok){
+  const el = $("live");
+  el.classList.toggle("off", !ok);
+  el.querySelector("span").textContent = ok
+    ? "실시간 재고 · " + lastOk.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}) + " 기준"
+    : "재고 갱신 실패 · 잠시 후 다시 시도";
+}
+const byName = () => Object.fromEntries(PRODUCTS.map(p => [p.name, p]));
+
+/* 재고와 장바구니 맞추기 (품절/수량 초과 시 정리) */
+function syncCartWithStock(notify){
+  const map = byName(); let changed = [];
+  for(const n of Object.keys(cart)){
+    const p = map[n];
+    if(!p || p.soldout){ delete cart[n]; changed.push(n + " (품절)"); continue; }
+    if(p.stock !== null && cart[n] > p.stock){ cart[n] = p.stock; changed.push(n + " (재고 " + p.stock + "개)"); }
+  }
+  if(changed.length){ saveCart(); if(notify) toast("장바구니 조정: " + changed.join(", ")); }
+}
+
+/* ---------- 렌더 ---------- */
+function renderAll(){ renderCats(); renderList(); renderBar(); renderCart(); }
+
+function renderCats(){
+  const cats = ["전체", ...new Set(PRODUCTS.map(p => p.cat))];
+  if(!cats.includes(curCat)) curCat = "전체";
+  $("cats").innerHTML = cats.map(c => `<button class="cat${c===curCat?" on":""}" data-c="${c}">${c}</button>`).join("");
+  $("cats").querySelectorAll(".cat").forEach(b => b.onclick = () => { curCat = b.dataset.c; renderCats(); renderList(); });
+}
+
+function visible(){
+  const q = query.replace(/\s/g,"").toLowerCase();
+  return PRODUCTS.filter(p => (curCat==="전체" || p.cat===curCat) && (!q || p.name.replace(/\s/g,"").toLowerCase().includes(q)));
+}
+
+function renderList(){
+  const list = visible();
+  if(!list.length){ $("list").innerHTML = '<div class="empty">해당하는 상품이 없어요</div>'; return; }
+  // 카테고리별 묶기 (검색/전체일 때도 분류 유지)
+  const groups = {}; const order = [];
+  list.forEach(p => { if(!groups[p.cat]){ groups[p.cat]=[]; order.push(p.cat);} groups[p.cat].push(p); });
+  $("list").innerHTML = order.map(c => `
+    <div class="sec"><h3>${c}</h3>
+      ${groups[c].map(p => itemHTML(p)).join("")}
+    </div>`).join("");
+}
+
+function itemHTML(p){
+  const q = cart[p.name] || 0;
+  const few = p.stock !== null && p.stock > 0 && p.stock <= 5;
+  const max = p.stock === null ? 99 : p.stock;
+  const im = imgOf(p.name);
+  return `<div class="item${p.soldout?" so":""}">
+    ${im ? `<img class="th" src="${im}" alt="" loading="lazy" onclick="showImg('${escq(p.name)}')" onerror="imgFail(this)">` : '<div class="th none">사진 없음</div>'}
+    <div class="info">
+      <div class="nm">${esc(p.name)}${p.soldout?'<span class="tag so">품절</span>':few?`<span class="tag few">${p.stock}개 남음</span>`:""}</div>
+      <div class="pr">${fmt(p.price)}</div>
+      ${p.exp?`<div class="meta">유통기한 ${esc(p.exp)}</div>`:""}
+    </div>
+    ${p.soldout ? "" : `<div class="qty${q?" has":""}">
+      <button onclick="chg('${escq(p.name)}',-1)" ${q?"":"disabled"}>−</button>
+      <span>${q}</span>
+      <button onclick="chg('${escq(p.name)}',1)" ${q>=max?"disabled":""}>+</button>
+    </div>`}
+  </div>`;
+}
+
+function chg(name, d){
+  const p = byName()[name]; if(!p || p.soldout) return;
+  const max = p.stock === null ? 99 : p.stock;
+  const n = Math.max(0, Math.min(max, (cart[name]||0) + d));
+  if(n === 0) delete cart[name]; else cart[name] = n;
+  if(d > 0 && n >= max && p.stock !== null) toast("남은 재고 " + p.stock + "개까지 담을 수 있어요");
+  saveCart(); renderList(); renderBar(); renderCart();
+}
+
+function goodsTotal(){ const m = byName(); return Object.entries(cart).reduce((s,[n,q]) => s + (m[n]?m[n].price*q:0), 0); }
+function cartCount(){ return Object.values(cart).reduce((a,b)=>a+b,0); }
+function isRemote(addr){ return /제주|울릉|백령|연평|대청|소청|흑산|홍도|거문|추자|가파|마라|비양|우도|신안군|완도군|진도군|옹진군/.test(addr||""); }
+function shipFee(){
+  const g = goodsTotal(); if(!g) return 0;
+  if(isAddl()) return 0;
+  if(CONFIG.FREE_SHIP_MIN && g >= CONFIG.FREE_SHIP_MIN) return 0;
+  return isRemote($("cAddr").value) ? CONFIG.REMOTE_FEE : CONFIG.SHIP_FEE;
+}
+
+function renderBar(){
+  const c = cartCount(), g = goodsTotal();
+  $("barTotal").textContent = fmt(g);
+  $("barCnt").textContent = c ? `${Object.keys(cart).length}종 ${c}개 담김` : "담은 상품 없음";
+  $("barBtn").disabled = !c;
+}
+
+function renderCart(){
+  const m = byName();
+  const rows = Object.entries(cart).map(([n,q]) => {
+    const p = m[n]; if(!p) return "";
+    const max = p.stock === null ? 99 : p.stock;
+    return `<div class="crow">
+      <div class="nm">${esc(n)}</div>
+      <div class="qty"><button onclick="chg('${escq(n)}',-1)">−</button><span>${q}</span><button onclick="chg('${escq(n)}',1)" ${q>=max?"disabled":""}>+</button></div>
+      <div class="amt">${fmt(p.price*q)}</div>
+    </div>`;
+  }).join("");
+  $("cartRows").innerHTML = rows || '<div class="empty" style="padding:16px 0">담은 상품이 없어요</div>';
+  const g = goodsTotal(), s = shipFee();
+  $("tGoods").textContent = fmt(g);
+  $("tShip").textContent = (g && isAddl()) ? "무료 (추가 주문)" : fmt(s);
+  $("vatRow").style.display = (payMethod() === "카드" && CONFIG.CARD_VAT_RATE > 0) ? "flex" : "none";
+  $("tVat").textContent = fmt(cardVat());
+  $("tTotalLbl").textContent = payMethod() === "카드" ? "총 카드 결제 금액" : "총 입금 금액";
+  $("tTotal").textContent = fmt(payTotal());
+  let hint = "";
+  if(g && isAddl()) hint = "추가 주문은 배송비가 없어요 (오늘 첫 주문과 합배송)";
+  else if(g && CONFIG.FREE_SHIP_MIN){
+    hint = g >= CONFIG.FREE_SHIP_MIN ? "무료배송 적용" : `${fmt(CONFIG.FREE_SHIP_MIN - g)} 더 담으면 무료배송`;
+  }
+  if(g && isRemote($("cAddr").value)) hint += (hint?" · ":"") + "제주·도서산간 배송비 적용";
+  $("shipHint").textContent = hint;
+}
+
+/* ---------- 화면 전환 ---------- */
+function go(s){
+  ["sGate","sList","sCart","sDone"].forEach(id => $(id).style.display = "none");
+  $("bar").style.display = s === "list" ? "block" : "none";
+  if(s === "list") $("sList").style.display = "block";
+  if(s === "done") $("sDone").style.display = "block";
+  if(s === "cart"){ $("sCart").style.display = "block"; if(orderedToday() && !$("addl").dataset.touched){ $("addl").checked = true; } renderPay(); }
+  window.scrollTo(0,0);
+}
+$("agree").onchange = e => $("btnStart").disabled = !e.target.checked;
+$("btnStart").onclick = () => { go("list"); };
+
+$("q").oninput = e => { query = e.target.value; $("qClear").style.display = query ? "block" : "none"; renderList(); };
+$("qClear").onclick = () => { query = ""; $("q").value = ""; $("qClear").style.display = "none"; renderList(); };
+
+/* ---------- 저장 ---------- */
+function saveCart(){ try{ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }catch(e){} }
+function loadCart(){ try{ cart = JSON.parse(localStorage.getItem(CART_KEY) || "{}") || {}; }catch(e){ cart = {}; } }
+function saveCustomer(){
+  if(!$("remember").checked) return;
+  const o = {}; ["cNick","cName","cPhone","cZip","cAddr","cAddr2","cMemo"].forEach(id => o[id] = $(id).value);
+  try{ localStorage.setItem(CUST_KEY, JSON.stringify(o)); }catch(e){}
+}
+function loadSaved(){
+  try{
+    const o = JSON.parse(localStorage.getItem(CUST_KEY) || "null"); if(!o) return;
+    Object.keys(o).forEach(id => { if($(id)) $(id).value = o[id] || ""; });
+    $("savedHint").style.display = "block";
+  }catch(e){}
+}
+function clearSaved(){
+  localStorage.removeItem(CUST_KEY);
+  ["cNick","cName","cPhone","cZip","cAddr","cAddr2","cMemo"].forEach(id => $(id).value = "");
+  $("savedHint").style.display = "none";
+}
+
+/* ---------- 주소 검색 ---------- */
+function findAddr(){
+  if(!window.daum){ $("cZip").readOnly = false; $("cAddr").readOnly = false; $("cZip").focus(); return; }
+  new daum.Postcode({ oncomplete: d => {
+    $("cZip").value = d.zonecode;
+    $("cAddr").value = d.roadAddress || d.jibunAddress;
+    $("cAddr2").focus(); renderCart();
+  }}).open();
+}
+$("cPhone").oninput = e => {
+  let v = e.target.value.replace(/\D/g,"").slice(0,11);
+  if(v.length > 7) v = v.replace(/(\d{3})(\d{4})(\d+)/, "$1-$2-$3");
+  else if(v.length > 3) v = v.replace(/(\d{3})(\d+)/, "$1-$2");
+  e.target.value = v;
+};
+
+/* ---------- 주문 전송 ---------- */
+let submitting = false;
+async function submitOrder(){
+  if(submitting) return;
+  if(!cartCount()){ alert("담긴 상품이 없습니다."); return; }
+  const need = [["cNick","닉네임"],["cName","수령인 성함"],["cPhone","연락처"],["cAddr","주소"]];
+  for(const [id,label] of need){
+    if(!$(id).value.trim()){ alert(label + "을(를) 입력해주세요."); $(id).focus(); return; }
+  }
+  if($("cPhone").value.replace(/\D/g,"").length < 10){ alert("연락처를 정확히 입력해주세요."); $("cPhone").focus(); return; }
+  const pay = payMethod();
+  if(pay === "카드" && payTotal() < 1000){ alert("카드결제는 1,000원 이상부터 가능합니다."); return; }
+  if(isAddl() && localStorage.getItem("lumie_last_order") !== todayStr()){
+    if(!confirm("'추가 주문 (배송비 없음)'이 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 접수할까요?")) return;
+  }
+
+  submitting = true; $("btnSubmit").disabled = true;
+  $("ovMsg").textContent = "재고 확인 중…"; $("ov").classList.add("show");
+
+  // 접수 직전 최신 재고 재확인
+  const before = JSON.stringify(cart);
+  await loadProducts(true);
+  if(JSON.stringify(cart) !== before || !cartCount()){
+    $("ov").classList.remove("show"); submitting = false; $("btnSubmit").disabled = false;
+    renderAll(); go("cart");
+    alert("방금 재고가 바뀌어 장바구니가 조정되었습니다. 내용을 확인한 뒤 다시 접수해주세요.");
+    return;
+  }
+
+  saveCustomer();
+  const m = byName();
+  const goods = goodsTotal(), ship = shipFee();
+  currentOid = makeOid();
+  const order = {
+    time: new Date().toLocaleString("ko-KR"),
+    page: CONFIG.PAGE, cat: CONFIG.PAGE, kind: "밀키트",
+    nick: $("cNick").value.trim(),
+    name: $("cName").value.trim(),
+    phone: $("cPhone").value.trim(),
+    zip: $("cZip").value.trim(),
+    addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
+    memo: $("cMemo").value.trim(),
+    items: Object.entries(cart).map(([n,q]) => `${n}x${q}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
+    goods, ship,
+    vat: cardVat(),                 // 카드 부가세 (계좌이체면 0)
+    total: payTotal(),              // 상품 + 배송비 + 카드부가세
+    pay: pay,                       // 계좌이체 / 카드
+    oid: currentOid,                // 주문번호 (카드결제 매칭용)
+    replace: getPending() || "",    // 결제 안 한 이전 카드주문 → 시트에서 '카드(대체됨)' 처리
+    agree: "식품 교환·환불 불가 규정 동의",
+  };
+
+  $("ovMsg").textContent = "주문 접수 중…";
+  let sent = false;
+  try{
+    await fetch(CONFIG.SHEET_URL, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(order) });
+    sent = true;
+  }catch(e){ console.error(e); }
+  $("ov").classList.remove("show");
+  submitting = false; $("btnSubmit").disabled = false;
+
+  if(!sent){ alert("주문 전송에 실패했습니다. 네트워크 확인 후 다시 시도해주세요."); return; }
+  $("doneAmt").textContent = fmt(order.total);
+  try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
+  setPending(pay === "카드" ? currentOid : "");
+  $("pend").classList.remove("show");
+  $("doneNo").textContent = order.nick + "님 · " + Object.keys(cart).length + "종 " + cartCount() + "개 · 주문번호 " + currentOid;
+  if(pay === "카드"){
+    $("doneLbl").textContent = CONFIG.CARD_VAT_RATE > 0 ? "카드 결제 금액 (부가세 " + Math.round(CONFIG.CARD_VAT_RATE*100) + "% 포함)" : "카드 결제 금액";
+    $("doneBank").style.display = "none"; $("doneCard").style.display = "block";
+  }else{
+    $("doneLbl").textContent = "이번 주문 입금 금액";
+    $("doneBank").style.display = "block"; $("doneCard").style.display = "none";
+  }
+  cart = {}; saveCart();
+  go("done");
+  if(pay === "카드") getPayLink(false);
+}
+
+/* ---------- 페이앱 결제URL 받기 (주문 저장 직후 / 실패 시 재시도) ---------- */
+async function getPayLink(manual){
+  if(!currentOid) return;
+  $("payFail").style.display = "none";
+  $("btnPay").textContent = "결제창 준비 중…"; $("btnPay").style.opacity = ".5"; $("btnPay").href = "#";
+  let lastMsg = "";
+  for(let i = 0; i < 4; i++){
+    try{
+      const res = await fetch(CONFIG.SHEET_URL + "?mode=paylink&o=" + encodeURIComponent(currentOid) + "&r=" + encodeURIComponent(CONFIG.RETURN_PAGE) + "&t=" + Date.now());
+      const j = await res.json();
+      if(j.ok && j.payurl){
+        $("btnPay").href = j.payurl; $("btnPay").textContent = "💳 카드로 결제하기 (" + $("doneAmt").textContent + ")"; $("btnPay").style.opacity = "1";
+        return;
+      }
+      lastMsg = j.msg || "";
+      if(!j.retry) break;
+    }catch(e){ lastMsg = "통신 오류"; }
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  $("btnPay").textContent = "결제창 생성 실패";
+  $("payFailMsg").textContent = lastMsg;
+  $("payFail").style.display = "block";
+}
+
+/* ---------- 카드 결제 후 주문서로 돌아온 경우 (?paid=주문번호) ---------- */
+(async function checkReturn(){
+  const m = location.search.match(/[?&]paid=([^&]+)/);
+  if(!m) return;
+  const oid = decodeURIComponent(m[1]);
+  if(!getPending() || getPending() === oid) setPending("");
+  go("done");
+  $("doneTitle").textContent = "카드 결제가 완료되었습니다";
+  $("doneLbl").textContent = "결제 금액";
+  $("doneAmt").textContent = "확인 중…";
+  $("doneNo").textContent = "주문번호 " + oid;
+  $("doneBank").style.display = "none"; $("doneCard").style.display = "none"; $("donePaid").style.display = "block";
+  try{
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=payreturn&o=" + encodeURIComponent(oid) + "&t=" + Date.now());
+    const j = await res.json();
+    $("doneAmt").textContent = j.ok ? fmt(Number(j.total)||0) : "-";
+  }catch(e){ $("doneAmt").textContent = "-"; }
+})();
+
+/* ---------- 결제 안 한 카드주문이 남아있으면 상단에 알림 ---------- */
+async function checkPending(){
+  const oid = getPending();
+  if(!oid || location.search.indexOf("paid=") > -1) return;
+  try{
+    const res = await fetch(CONFIG.SHEET_URL + "?mode=paystate&o=" + encodeURIComponent(oid) + "&t=" + Date.now());
+    const j = await res.json();
+    if(!j.ok || j.replaced || (j.paid && (j.paid === "O" || j.paid.indexOf("카드✓") === 0 || j.paid === "취소"))){ setPending(""); return; }
+    $("pendNo").textContent = "주문번호 " + oid;
+    if(j.payurl){ $("pendPay").href = j.payurl; $("pendPay").style.display = ""; }
+    else { $("pendPay").style.display = "none"; }
+    $("pend").classList.add("show");
+  }catch(e){}
+}
+function dropPending(){
+  if(!confirm("결제 대기 중인 주문 알림을 지울까요?\n(주문은 결제 전까지 접수되지 않으니, 필요하면 새로 주문해주세요)")) return;
+  setPending(""); $("pend").classList.remove("show");
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden && getPending()) checkPending(); });
+
+/* ---------- 유틸 ---------- */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function escq(s){ return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+function imgFail(el){ const d = document.createElement("div"); d.className = "th none"; d.textContent = "사진 없음"; el.replaceWith(d); }
+function showImg(name){ const u = imgOf(name); if(!u) return; $("lbImg").src = u; $("lbName").textContent = name; $("lb").classList.add("show"); }
+let toastT;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove("show"), 2600); }
+
+/* ---------- 시작 ---------- */
+loadCart(); loadSaved();
+$("list").innerHTML = '<div class="empty">상품을 불러오는 중입니다…</div>';
+loadProducts();
+checkPending();
+setInterval(() => loadProducts(document.hidden), CONFIG.REFRESH_MS);
+document.addEventListener("visibilitychange", () => { if(!document.hidden) loadProducts(); });
+$("cAddr").addEventListener("change", renderCart);
+</script>
+</body>
+</html>
