@@ -527,16 +527,17 @@ async function loadProducts(silent){
     if(!Array.isArray(data)) throw new Error("bad data");
     PRODUCTS = data.map(r => {
       const st = String(r.status || "").trim();
-      const stockRaw = r.stock;
-      const hasStock = stockRaw !== "" && stockRaw !== null && stockRaw !== undefined && !isNaN(Number(stockRaw));
-      const stock = hasStock ? Number(stockRaw) : null;   // null = 재고 관리 안 함
+      // 재고: 시트 D열이 비어있거나 0이면 재고 관리 안 함(무제한). 1 이상이면 그 수량까지만.
+      // 품절은 판매상태(F열)에 "품절" 이라고 적으면 됨 (재고 자동차감 켜면 0 되는 순간 자동으로 품절이 적힘)
+      const stockNum = Number(r.stock);
+      const stock = (isNaN(stockNum) || stockNum <= 0) ? null : stockNum;   // null = 재고 관리 안 함
       return {
         name: String(r.name || "").trim(),
         price: Number(r.price) || 0,
         stock, exp: String(r.exp || "").trim(),
         cat: String(r.desc || "").trim() || "기타",
         hidden: /숨김|비공개/.test(st),
-        soldout: /품절/.test(st) || (stock !== null && stock <= 0),
+        soldout: /품절/.test(st),
       };
     }).filter(p => p.name && p.price && !p.hidden);
     lastOk = new Date();
