@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>르미에 × 사미가 한식 밀키트 주문서</title>
+<title>르미에 한식 밀키트 주문서</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root{
@@ -170,7 +170,7 @@ button{cursor:pointer;border:0;background:none}
 
 <div class="hd">
   <div class="brand">르미에 라이브</div>
-  <h1>사미가 <em>한식 밀키트</em> 주문서</h1>
+  <h1>르미에 <em>한식 밀키트</em> 주문서</h1>
   <div class="sub">방송 중 실시간 재고로 운영됩니다</div>
   <div class="live" id="live"><i></i><span>상품 불러오는 중…</span></div>
 </div>
@@ -316,11 +316,11 @@ const CONFIG = {
   ACCT_BANK: "카카오뱅크 · 김푸름",
   CARD_VAT_RATE: 0.10,      // 카드결제 시 상품금액에 붙는 부가세 (0이면 안 붙고 문구도 사라짐)
   RETURN_PAGE: "samiga",    // 카드 결제 후 돌아올 파일명 (Apps Script가 lumie-order/samiga.html 로 보내줌)
-  OID_PREFIX: "S",          // 주문번호 접두어 (만수르 M, 가방 B, 사미가 S)
+  OID_PREFIX: "S",          // 주문번호 접두어 (만수르 M, 가방 B, 밀키트 S)
 };
 
 const $ = id => document.getElementById(id);
-/* ---------- 상품 사진 (사미가마켓) — 시트 제품명(공백 제거)으로 매칭 ---------- */
+/* ---------- 상품 사진 — 시트 제품명(공백 제거)으로 매칭 ---------- */
 const IMG_BASE = "https://sm-samiga11.godhub.kr/uploads/products/";
 const IMG = {
   "국산고등어250g(실질350g)":"F20_1787819589511.webp",
@@ -344,9 +344,13 @@ const IMG = {
   "햇살바람배도라지즙50개입":"O19_1787879790685.webp",
   "데일리레몬수500ml24개입":"O15_1787836969259.webp",
   "사미가한돈스테이크5팩":"E01_1787876416897.webp",
+  "한돈스테이크5팩":"E01_1787876416897.webp",
   "사미가한우스테이크5팩":"E02_1787876509981.webp",
+  "한우스테이크5팩":"E02_1787876509981.webp",
   "사미가꼬마수제피자스테이크4팩":"E03_1787876672864.webp",
+  "꼬마수제피자스테이크4팩":"E03_1787876672864.webp",
   "사미가고추스테이크5팩":"E08_1787877291385.webp",
+  "고추스테이크5팩":"E08_1787877291385.webp",
   "미스렐라치즈떡갈비5팩":"E06_1787876952704.webp",
   "우리한돈알카츠(500g)":"E04_1787876877833.webp",
   "압구정명품수제돈까스(110gx4)":"E07_1787877181544.webp",
@@ -760,7 +764,7 @@ async function submitOrder(){
   currentOid = makeOid();
   const order = {
     time: new Date().toLocaleString("ko-KR"),
-    page: CONFIG.PAGE, cat: CONFIG.PAGE, kind: "밀키트", vendor: "사미가",
+    page: CONFIG.PAGE, cat: CONFIG.PAGE, kind: "밀키트",
     nick: $("cNick").value.trim(),
     name: $("cName").value.trim(),
     phone: $("cPhone").value.trim(),
