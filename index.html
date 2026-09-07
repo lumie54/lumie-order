@@ -226,7 +226,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
         <div class="nb-title">🚚 배송비 안내</div>
         <div class="row-line"><span>기본 배송비</span><b>4,000원</b></div>
         <div class="row-line"><span>제주 및 도서산간</span><b>7,000원</b></div>
-        <div class="row-line"><span>15만원 이상 구매 시</span><b style="color:var(--accent-dark);">무료배송 🎉</b></div>
+        <div class="row-line" id="freeShipRow" style="display:none;"><span id="freeShipRowLabel"></span><b style="color:var(--accent-dark);">무료배송 🎉</b></div>
       </div>
 
       <div class="notice-block">
@@ -270,11 +270,15 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
         <div class="pmat" id="fMat"></div>
         <div class="pnote" id="fNote"></div>
 
-        <label class="fld">칼라</label>
-        <select id="selColor"></select>
+        <div id="colorWrap">
+          <label class="fld">칼라</label>
+          <select id="selColor"></select>
+        </div>
 
-        <label class="fld">사이즈</label>
-        <select id="selSize"></select>
+        <div id="sizeWrap">
+          <label class="fld">사이즈</label>
+          <select id="selSize"></select>
+        </div>
 
         <label class="fld">수량</label>
         <div class="qty-row">
@@ -304,7 +308,7 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
           <option value="0">추가 주문 — 오늘 이미 주문한 경우만 (배송비 없음)</option>
         </select>
       </div>
-      <p id="freeMsg" style="display:none;margin-top:14px;font-size:14px;font-weight:700;color:var(--accent-dark);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;">🎉 15만원 이상 구매로 배송비가 무료입니다</p>
+      <p id="freeMsg" style="display:none;margin-top:14px;font-size:14px;font-weight:700;color:var(--accent-dark);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center;"></p>
 
       <div class="sum-row"><span>배송비</span><b id="sumShip">4,000원</b></div>
       <div class="sum-row total"><span>총 입금 금액</span><span class="amt" id="sumTotal">0원</span></div>
@@ -390,8 +394,10 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 const CONFIG = {
   // 구글시트 연동용 Apps Script 웹앱 URL (설정 방법은 안내 문서 참고)
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
-  // 이 금액(원) 이상 구매 시 무료배송
-  FREE_SHIP_MIN: 150000,
+  // 이 금액(원) 이상 구매 시 무료배송  ★ 0 으로 두면 무료배송 없음
+  FREE_SHIP_MIN: 0,
+  // 옵션 값이 이 단어 하나뿐이면 칼라/사이즈 선택칸을 숨김 (선물세트·식품용)
+  SINGLE_OPTION: "단일",
 };
 
 /* ================================================================
@@ -463,6 +469,17 @@ async function loadProducts(){
 }
 loadProducts();
 
+/* 무료배송 기준 문구 — CONFIG.FREE_SHIP_MIN 하나만 고치면 화면 전체가 따라감 */
+(function initFreeShipText(){
+  const min = CONFIG.FREE_SHIP_MIN;
+  if(!(min > 0)) return;
+  const man = Math.floor(min / 10000);
+  const label = man > 0 ? man + "만원 이상 구매 시" : min.toLocaleString("ko-KR") + "원 이상 구매 시";
+  document.getElementById("freeShipRow").style.display = "flex";
+  document.getElementById("freeShipRowLabel").textContent = label;
+  document.getElementById("freeMsg").textContent = "🎉 " + label.replace(" 구매 시", " 구매로") + " 배송비가 무료입니다";
+})();
+
 let cart = [];
 let submitting = false;
 let current = null;
@@ -516,11 +533,25 @@ async function searchProduct(){
   $("fNote").style.display = p.note ? "block" : "none";
   fillSelect("selColor", p.colors, "칼라를 선택하세요");
   fillSizeSelect(p);
+  toggleOptionBox("colorWrap", p.colors.map(sizeLabel));
+  toggleOptionBox("sizeWrap",  p.sizes.map(sizeLabel));
   updatePriceView();
   $("inpQty").value = 1;
   $("foundBox").classList.add("show");
 }
 function sizeLabel(v){ return typeof v === "string" ? v : v.n; }
+/* 옵션이 '단일' 하나뿐이면 선택칸 자체를 숨긴다 (값은 그대로 유지) */
+function toggleOptionBox(id, labels){
+  const hide = labels.length === 1 && labels[0] === CONFIG.SINGLE_OPTION;
+  document.getElementById(id).style.display = hide ? "none" : "block";
+}
+/* 주문내역 표기에서 '단일'은 빼고 보여준다 */
+function optText(c){
+  const a = [];
+  if(c.color && c.color !== CONFIG.SINGLE_OPTION) a.push(c.color);
+  if(c.size  && c.size  !== CONFIG.SINGLE_OPTION) a.push(c.size);
+  return a.join(" / ");
+}
 function fillSizeSelect(p){
   const s = $("selSize");
   if(p.sizes.length === 1){
@@ -590,7 +621,7 @@ function delItem(i){ cart.splice(i,1); renderCart(); }
 function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
 function isAddl(){ return $("selShip").value === "0"; }
 function goodsTotal(){ return cart.reduce((s,c)=>s+c.price*c.qty,0); }
-function isFreeShip(){ return cart.length > 0 && goodsTotal() >= CONFIG.FREE_SHIP_MIN; }
+function isFreeShip(){ return CONFIG.FREE_SHIP_MIN > 0 && cart.length > 0 && goodsTotal() >= CONFIG.FREE_SHIP_MIN; }
 function shipFee(){
   if(!cart.length) return 0;
   if(isAddl()) return 0;
@@ -607,7 +638,7 @@ function renderCart(){
       <div class="cart-item">
         <div>
           <div class="ci-name">${c.no}번 · ${c.name}</div>
-          <div class="ci-opt">${c.color} / ${c.size} / ${c.qty}개</div>
+          <div class="ci-opt">${optText(c) ? optText(c) + " / " : ""}${c.qty}개</div>
           <button class="ci-del" onclick="delItem(${i})">삭제</button>
         </div>
         <div class="ci-price">${fmt(c.price*c.qty)}</div>
@@ -631,8 +662,8 @@ function renderSummary(){
   }
   $("summaryBox").className = "";
   $("summaryBox").innerHTML =
-    cart.map(c=>`· ${c.no}번 ${c.name} (${c.color}/${c.size}) × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
-    `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}<br><b>합계 ${fmt(goodsTotal()+shipFee())}</b>`;
+    cart.map(c=>`· ${c.no}번 ${c.name}${optText(c) ? " (" + optText(c) + ")" : ""} × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
+    `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료" : fmt(shipFee())}<br><b>합계 ${fmt(goodsTotal()+shipFee())}</b>`;
 }
 
 /* ---------- 주소 검색 (다음 우편번호) ---------- */
@@ -710,7 +741,7 @@ async function submitOrder(){
     addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
     memo: $("cMemo").value.trim(),
     req: $("cReq").value.trim(),
-    items: cart.map(c=>`${c.no}번 ${c.name}(${c.color}/${c.size})x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
+    items: cart.map(c=>`${c.no}번 ${c.name}${optText(c) ? "(" + optText(c) + ")" : ""}x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
     goods: goodsTotal(),
     ship: shipFee(),
     total: goodsTotal()+shipFee(),
