@@ -309,16 +309,38 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
   <div id="screenOrder">
 
     <div class="card">
-      <h2><span class="live-dot"></span> 지금 방송 중인 상품 <span class="tag">실시간</span></h2>
-      <p class="hint" style="margin:0 0 10px;">방송에서 소개하는 상품이 순서대로 올라옵니다. <b>가장 최근 상품이 맨 위</b>예요.</p>
-      <div id="liveList"></div>
-    </div>
-
-    <div class="card">
-      <h2>🔍 전체 상품 검색 <span class="tag">놓쳤을 때</span></h2>
+      <h2>🔍 상품 검색 <span class="tag">품번 · 품명</span></h2>
+      <p class="hint" style="margin:0 0 10px;">방송에서 안내드린 <b>품번 뒷자리</b> 또는 <b>품명</b>을 입력하시면 상품이 나옵니다.</p>
       <input type="text" id="q" placeholder="품명(예: 파크백) 또는 품번 뒷자리(예: 1558)" oninput="renderSearch()" style="font-size:15px;">
       <p class="hint" id="cnt"></p>
       <div id="list" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>✍️ 검색해도 안 나오는 상품 <span class="tag">직접 입력</span></h2>
+      <p class="hint" style="margin:0 0 10px;">검색되지 않는 상품은 여기에 직접 입력해 담아주세요.<br><b style="color:var(--danger);">방송에서 안내된 금액을 정확히 입력</b>해주셔야 입금 확인이 빠릅니다.</p>
+      <button class="btn btn-outline" id="btnManualOpen" style="padding:12px;font-size:14.5px;" onclick="toggleManual()">＋ 직접 입력하기</button>
+      <div id="manualBox" style="display:none;margin-top:12px;">
+        <label class="fld">상품명 / 품번</label>
+        <input type="text" id="mName" placeholder="예) 파크백 또는 1558">
+        <div class="inline">
+          <div>
+            <label class="fld">가격 (원)</label>
+            <input type="number" id="mPrice" inputmode="numeric" placeholder="예) 89000">
+          </div>
+          <div>
+            <label class="fld">색상 (선택)</label>
+            <input type="text" id="mColor" placeholder="예) 블랙">
+          </div>
+        </div>
+        <label class="fld">수량</label>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="mChg(-1)">−</button>
+          <input class="qty-val" type="number" id="mQty" value="1" min="1" inputmode="numeric">
+          <button class="qty-btn" onclick="mChg(1)">＋</button>
+        </div>
+        <button class="btn btn-primary" style="margin-top:12px;padding:13px;font-size:15px;" onclick="addManual()">🛒 담기</button>
+      </div>
     </div>
 
     <div class="card">
@@ -423,12 +445,11 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 const CONFIG = {
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
   FREE_SHIP_MIN: 150000,
-  LIVE_MS: 5000,          // 방송 노출 목록 갱신 주기 (밀리초)
   CATALOG_MS: 60000,      // 전체 상품 갱신 주기
 };
 
 /* ================================================================
-   ★ 가방 주문서 — '방송노출' 순서대로 실시간 표시 + 전체 검색
+   ★ 가방 주문서 — 품번·품명 검색 + 미등록 상품 직접 입력
    ================================================================ */
 let cart = [];
 let submitting = false;
@@ -445,19 +466,16 @@ function copyAcct(btn){
 function startOrder(){
   $("screenGate").style.display = "none";
   $("screenOrder").style.display = "block";
-  renderLive(); renderSearch(false);
-  loadLive();
-  setInterval(loadLive, CONFIG.LIVE_MS);
+  renderSearch(false);
   loadSaved();
   window.scrollTo(0,0);
 }
 
-/* ---------- 시트 '가방'(전체 상품, 60초) + '방송노출'(5초) 불러오기 ---------- */
+/* ---------- 시트 '가방' 전체 상품 불러오기 (60초마다 갱신) ---------- */
 let PRODUCTS = [];       // {no, code, name, price, img, colors:[{name,soldout}]}
 let BYNO = {};
-let LIVE = [];           // [{seq,no,name,price,ts}] 최신순
 let loaded = false;
-let lastCatalog = "", lastLive = "";
+let lastCatalog = "";
 let shown = 20;
 const qty = {};          // qty[no]
 const pick = {};         // pick[no] = 색상명
@@ -485,38 +503,15 @@ async function loadCatalog(){
     BYNO = {};
     PRODUCTS.forEach(p => BYNO[p.no] = p);
     loaded = true;
-    renderLive();
     renderSearch(false);
     return true;
   }catch(e){
     console.error("상품 불러오기 실패", e);
     if(!loaded && $("screenOrder").style.display === "block"){
-      $("liveList").innerHTML = "<p class='hint' style='text-align:center;padding:24px 0;color:var(--danger);'>상품을 불러오지 못했습니다.<br>네트워크 확인 후 새로고침해주세요.</p>";
+      $("list").innerHTML = "<p class='hint' style='text-align:center;padding:24px 0;color:var(--danger);'>상품을 불러오지 못했습니다.<br>네트워크 확인 후 새로고침해주세요.</p>";
     }
   }
   return false;
-}
-
-async function loadLive(){
-  if(!CONFIG.SHEET_URL) return;
-  try{
-    const res = await fetch(CONFIG.SHEET_URL + "?mode=baglive&t=" + Date.now());
-    const raw = await res.text();
-    if(raw === lastLive) return;
-    const data = JSON.parse(raw);
-    lastLive = raw;
-    LIVE = (data.live||[]);
-    // 띄우면서 입력한 품명·가격을 바로 반영 (전체 상품 갱신 전이라도)
-    let changed = false;
-    LIVE.forEach(l => {
-      const p = BYNO[l.no];
-      if(!p) return;
-      if(l.name && p.name !== l.name){ p.name = l.name; changed = true; }
-      if(l.price && p.price !== l.price){ p.price = l.price; changed = true; }
-    });
-    renderLive();
-    if(changed) renderSearch(false);
-  }catch(e){ console.error("방송노출 불러오기 실패", e); }
 }
 
 loadCatalog();
@@ -565,23 +560,6 @@ function cardHtml(p, badge){
         <button class="add" onclick="addItem(${no})" ${allSold ? "disabled" : ""}>${allSold ? "판매종료" : "🛒 담기"}</button>
       </div>
     </div>`;
-}
-
-function renderLive(){
-  const box = $("liveList");
-  if(!loaded){
-    box.innerHTML = "<p class='hint' style='text-align:center;padding:24px 0;'>상품을 불러오는 중입니다…</p>";
-    return;
-  }
-  if(!LIVE.length){
-    box.innerHTML = "<p class='hint' style='text-align:center;padding:20px 0;'>아직 소개된 상품이 없습니다.<br>방송이 시작되면 여기에 순서대로 올라와요 👜</p>";
-    return;
-  }
-  box.innerHTML = LIVE.filter(l => BYNO[l.no]).map((l, idx) => {
-    const p = BYNO[l.no];
-    const badge = idx === 0 ? '<span class="badge lv-now">🔴 지금 소개 중</span>' : '';
-    return cardHtml(p, badge);
-  }).join("");
 }
 
 function renderSearch(reset){
@@ -636,6 +614,36 @@ function addItem(no){
   document.querySelectorAll("select[data-no='" + no + "']").forEach(s => s.value = "");
   renderCart();
 }
+
+/* ---------- 시트에 없는 상품 직접 입력 ---------- */
+function toggleManual(){
+  const box = $("manualBox"), btn = $("btnManualOpen");
+  const open = box.style.display === "none";
+  box.style.display = open ? "block" : "none";
+  btn.textContent = open ? "− 닫기" : "＋ 직접 입력하기";
+  if(open) $("mName").focus();
+}
+function mChg(d){
+  const el = $("mQty");
+  el.value = Math.max(1, (parseInt(el.value,10)||1) + d);
+}
+function addManual(){
+  const name  = $("mName").value.trim();
+  const price = parseInt(String($("mPrice").value).replace(/[^0-9]/g,""),10);
+  const color = $("mColor").value.trim();
+  const q     = Math.max(1, parseInt($("mQty").value,10)||1);
+  if(!name){ alert("상품명 또는 품번을 입력해주세요."); $("mName").focus(); return; }
+  if(!price || price < 1000){ alert("방송에서 안내된 가격을 정확히 입력해주세요."); $("mPrice").focus(); return; }
+  if(price > 2000000 && !confirm("입력하신 가격이 " + price.toLocaleString() + "원 입니다.\n금액이 맞을까요?")) return;
+  const label = "[직접입력] " + name;
+  if(!confirm("아래 상품을 담을까요?\n\n" + label + (color ? " (" + color + ")" : "") + "\n" +
+              price.toLocaleString() + "원 × " + q + "개 = " + (price*q).toLocaleString() + "원\n\n" +
+              "※ 방송에서 안내된 금액과 다르면 입금 확인이 늦어질 수 있습니다.")) return;
+  cart.push({ name: label, price: price, opt: color, qty: q });
+  $("mName").value = ""; $("mPrice").value = ""; $("mColor").value = ""; $("mQty").value = 1;
+  renderCart();
+}
+
 function delItem(i){ cart.splice(i,1); renderCart(); }
 function cartQty(i, d){
   const c = cart[i];
