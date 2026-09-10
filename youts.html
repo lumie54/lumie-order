@@ -619,9 +619,26 @@ function startOrder(){
    → 품절옵션 : "블랙"(색상 전체) / "S"(사이즈 전체) / "블랙:S"(조합만), 콤마로 여러 개
    → 번호가 빈칸이면 주문서에 안 나옵니다 · 구분에 "신상" 이 있으면 NEW 뱃지
 ------------------------------------------------------------------- */
-const splitOpt = v => String(v == null ? "" : v).split(/[,\/|·]/).map(x => x.trim()).filter(Boolean);
+const splitOpt = v => String(v == null ? "" : v).split(/[,\/|·\r\n]+/).map(x => x.trim()).filter(Boolean);
 const normOpt  = v => String(v == null ? "" : v).toLowerCase().replace(/\s+/g, "");
 const cKey     = (c, z) => normOpt(c) + "|" + normOpt(z);
+const cleanTxt = v => String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+
+/* 사이즈 칸 정리
+   "225~250"  → 225,230,235,240,245,250 (신발, 5mm 단위로 펼침)
+   "55만 5장" → 55  (업체가 적어둔 재고 메모 제거)
+   그 외("F", "66(프리)", "M(55)" 등)는 그대로 둠 */
+function expandSize(tok){
+  const rg = tok.match(/^(\d{3})\s*[~\-–]\s*(\d{3})$/);
+  if(rg){
+    const a = parseInt(rg[1], 10), b = parseInt(rg[2], 10), out = [];
+    if(b > a && b - a <= 60){ for(let v = a; v <= b; v += 5) out.push(String(v)); return out; }
+  }
+  const memo = tok.match(/^(\d{2,3})\s*(?:만|장|개)\b/) || tok.match(/^(\d{2,3})\s*만/);
+  if(memo) return [memo[1]];
+  return [tok];
+}
+const sizeList = v => splitOpt(v).reduce((acc, t) => acc.concat(expandSize(t)), []);
 
 async function loadProducts(silent){
   if(!CONFIG.SHEET_URL) return false;
@@ -637,12 +654,15 @@ async function loadProducts(silent){
         if(status.indexOf("숨김") > -1 || status.indexOf("삭제") > -1) return;
 
         let numRaw   = String(r.num   == null ? "" : r.num).trim();
-        let name     = String(r.name  || "").trim();
+        let name     = cleanTxt(r.name);
         let priceRaw = String(r.price == null ? "" : r.price).trim();
         let special  = String(r.special || "").trim();
         let cat      = String(r.cat || "").trim();
         const colorRaw = String(r.color || "").trim();
         const sizeRaw  = String(r.sizes || "").trim();
+        // 번호가 "81번" 처럼 적혀 있어도 81 로 인식 (숫자 검색이 되도록)
+        const numDigits = numRaw.replace(/[^0-9]/g, "");
+        if(numDigits) numRaw = numDigits;
 
         // 병합셀 대응 — 상품명이 비었는데 색상/사이즈가 있으면 윗행을 이어받음
         if(!name && (colorRaw || sizeRaw)){
@@ -682,7 +702,7 @@ async function loadProducts(silent){
         const price  = Number(priceRaw.replace(/[^0-9]/g, "")) || 0;
         if(price && !g.price) g.price = price;
 
-        const cs = splitOpt(colorRaw), zs = splitOpt(sizeRaw);
+        const cs = splitOpt(colorRaw), zs = sizeList(sizeRaw);
         (cs.length ? cs : [""]).forEach(c => {
           if(c && g.colors.indexOf(c) < 0) g.colors.push(c);
           (zs.length ? zs : [""]).forEach(z => {
