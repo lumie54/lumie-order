@@ -601,18 +601,27 @@ function startOrder(){
 
 /* ---------- 구글시트 '유츠' 탭에서 상품 실시간 불러오기 ----------
    시트 열(1행 헤더):  번호 · 상품명 · 색상 · 사이즈 · 가격 · 특가 · 구분 · 판매상태 · 품절옵션
-   → 한 행 = 상품 1개. 색상/사이즈는 콤마로 나열하면 드롭다운이 자동 생성됩니다.
-        색상  "블랙,아이보리,차콜"      (색상 없는 상품은 빈칸)
-        사이즈 "S,M,L"  또는 "프리"  또는 "225,230,235"
-   → 품절옵션 : "블랙"      → 그 색상 전체 품절
-                "S"         → 그 사이즈 전체 품절
-                "블랙:S"    → 블랙의 S 만 품절      (콤마로 여러 개)
-   → 판매상태 : "품절" 상품 전체 품절 · "숨김"/"삭제" 주문서에서 미노출
-   → 번호가 빈칸이면 주문서에 안 나옵니다 (나중에 채우면 자동으로 노출)
-   → 구분에 "신상" 이 있으면 NEW 뱃지
+
+   ★ 두 가지 형태를 모두 인식합니다 (업체가 주는 대로 붙여넣으면 됨)
+   (A) 상품 1행 · 색상/사이즈 콤마 나열
+        1 | 골지티 | 블랙,아이보리 | S,M,L | 39000
+   (B) 색상별 / 색상×사이즈별로 행이 쪼개진 형태
+        1 | 골지티 | 블랙   | S | 39000
+        1 | 골지티 | 블랙   | M | 39000
+        1 | 골지티 | 아이보리 | S | 39000
+      → 같은 (번호 + 상품명) 행끼리 자동으로 한 상품으로 묶습니다.
+        이때 실제로 존재하는 색상×사이즈 조합만 선택할 수 있습니다.
+        (위 예시에서 아이보리는 S 만 뜨고 M 은 안 뜸)
+      → 병합셀 때문에 상품명/번호가 빈 행은 바로 윗행 값을 이어받습니다.
+      → 행마다 가격이 다르면 그 조합의 가격이 적용됩니다.
+
+   → 판매상태 : "품절" 그 행의 조합 품절 · "숨김"/"삭제" 미노출
+   → 품절옵션 : "블랙"(색상 전체) / "S"(사이즈 전체) / "블랙:S"(조합만), 콤마로 여러 개
+   → 번호가 빈칸이면 주문서에 안 나옵니다 · 구분에 "신상" 이 있으면 NEW 뱃지
 ------------------------------------------------------------------- */
 const splitOpt = v => String(v == null ? "" : v).split(/[,\/|·]/).map(x => x.trim()).filter(Boolean);
 const normOpt  = v => String(v == null ? "" : v).toLowerCase().replace(/\s+/g, "");
+const cKey     = (c, z) => normOpt(c) + "|" + normOpt(z);
 
 async function loadProducts(silent){
   if(!CONFIG.SHEET_URL) return false;
@@ -620,35 +629,84 @@ async function loadProducts(silent){
     const res = await fetch(CONFIG.SHEET_URL + "?mode=" + CONFIG.MODE + "&t=" + Date.now());
     const data = await res.json();
     if(Array.isArray(data) && data.length){
-      const list = [];
-      data.forEach((r, idx) => {
+      const groups = {}, order = [];
+      let pvNum = "", pvName = "", pvPrice = "", pvSp = "", pvCat = "";
+
+      data.forEach(r => {
         const status = String(r.status || "").trim();
         if(status.indexOf("숨김") > -1 || status.indexOf("삭제") > -1) return;
-        const name = String(r.name || "").trim();
+
+        let numRaw   = String(r.num   == null ? "" : r.num).trim();
+        let name     = String(r.name  || "").trim();
+        let priceRaw = String(r.price == null ? "" : r.price).trim();
+        let special  = String(r.special || "").trim();
+        let cat      = String(r.cat || "").trim();
+        const colorRaw = String(r.color || "").trim();
+        const sizeRaw  = String(r.sizes || "").trim();
+
+        // 병합셀 대응 — 상품명이 비었는데 색상/사이즈가 있으면 윗행을 이어받음
+        if(!name && (colorRaw || sizeRaw)){
+          name = pvName;
+          if(!numRaw)   numRaw   = pvNum;
+          if(!priceRaw) priceRaw = pvPrice;
+          if(!special)  special  = pvSp;
+          if(!cat)      cat      = pvCat;
+        }
         if(!name) return;
-        const numRaw = String(r.num == null ? "" : r.num).trim();
+        // 상품명은 반복돼 있는데 번호만 빈 행
+        if(!numRaw && name === pvName) numRaw = pvNum;
         if(!numRaw) return;                       // ★ 번호 없는 상품은 미노출
-        const allOut = status.indexOf("품절") > -1;
-        const out = splitOpt(r.soldopt).map(normOpt);
-        const item = {
-          id: (numRaw || "-") + "|" + name,   // 행 순서가 아니라 번호+상품명 기준 (시트 행 추가/삭제해도 장바구니 안 꼬임)
-          num: /^[0-9]+$/.test(numRaw) ? String(parseInt(numRaw, 10)) : numRaw,
-          name: name,
-          sizes: splitOpt(r.sizes),
-          price: Number(String(r.price == null ? "" : r.price).replace(/[^0-9]/g, "")) || 0,
-          special: String(r.special || "").trim(),
-          isNew: String(r.cat || "").indexOf("신상") > -1,
-          allOut: allOut,
-          out: out,
-          colors: []
-        };
-        const cs = splitOpt(r.color);
-        item.colors = cs.length
-          ? cs.map(n => ({ name: n, stock: null, soldout: allOut || out.indexOf(normOpt(n)) > -1 }))
-          : [{ name: "", stock: null, soldout: allOut }];
-        list.push(item);
+
+        pvNum = numRaw; pvName = name;
+        if(priceRaw) pvPrice = priceRaw;
+        if(special)  pvSp = special;
+        if(cat)      pvCat = cat;
+
+        const key = numRaw + "|" + name;
+        let g = groups[key];
+        if(!g){
+          g = groups[key] = {
+            id: key,
+            num: /^[0-9]+$/.test(numRaw) ? String(parseInt(numRaw, 10)) : numRaw,
+            name: name, price: 0, special: special,
+            isNew: cat.indexOf("신상") > -1,
+            colors: [], sizes: [], combos: {}, out: []
+          };
+          order.push(key);
+        }
+        if(special && !g.special) g.special = special;
+        if(cat.indexOf("신상") > -1) g.isNew = true;
+        splitOpt(r.soldopt).map(normOpt).forEach(o => { if(g.out.indexOf(o) < 0) g.out.push(o); });
+
+        const rowOut = status.indexOf("품절") > -1;
+        const price  = Number(priceRaw.replace(/[^0-9]/g, "")) || 0;
+        if(price && !g.price) g.price = price;
+
+        const cs = splitOpt(colorRaw), zs = splitOpt(sizeRaw);
+        (cs.length ? cs : [""]).forEach(c => {
+          if(c && g.colors.indexOf(c) < 0) g.colors.push(c);
+          (zs.length ? zs : [""]).forEach(z => {
+            if(z && g.sizes.indexOf(z) < 0) g.sizes.push(z);
+            const k = cKey(c, z);
+            if(!g.combos[k]) g.combos[k] = { color: c, size: z, soldout: false, price: 0 };
+            if(rowOut) g.combos[k].soldout = true;
+            if(price)  g.combos[k].price = price;
+          });
+        });
       });
-      PRODUCTS = list;
+
+      PRODUCTS = order.map(k => {
+        const g = groups[k];
+        const colorList = g.colors.length ? g.colors : [""];
+        const p = {
+          id: g.id, num: g.num, name: g.name, price: g.price,
+          special: g.special, isNew: g.isNew,
+          sizes: g.sizes, combos: g.combos, out: g.out, colors: []
+        };
+        p.colors = colorList.map(n => ({ name: n, stock: null, soldout: colorSoldOut(p, n) }));
+        p.allOut = p.colors.every(c => c.soldout);
+        return p;
+      });
       loaded = true;
       const sn = $("saleNote");
       if(sn){
@@ -683,27 +741,46 @@ const isFree = p => p.sizes.length === 1 && /^(프리|free)$/i.test(p.sizes[0]);
 const needSize = p => p.sizes.length > 0 && !isFree(p);
 const labelOf = p => (p.num ? p.num + "번 " : "") + p.name;
 
-/* 옵션 단위 품절 판정 — 시트 '품절옵션' 칸 기준 */
+/* ---------- 색상×사이즈 조합 판정 ----------
+   조합이 아예 없으면(그 색상엔 없는 사이즈) 선택 불가,
+   품절옵션 열이나 판매상태 "품절" 이면 품절 표시 */
+function colorSoldOut(p, color){
+  const nc = normOpt(color);
+  if(nc && p.out.indexOf(nc) > -1) return true;
+  const ks = Object.keys(p.combos).filter(k => k.slice(0, k.lastIndexOf("|")) === nc);
+  if(!ks.length) return true;
+  return ks.every(k => p.combos[k].soldout || p.out.indexOf(k.slice(k.lastIndexOf("|") + 1)) > -1);
+}
+function sizesFor(p, color){
+  if(!color) return p.sizes;
+  const nc = normOpt(color);
+  return p.sizes.filter(z => !!p.combos[cKey(nc, z)]);
+}
 function sizeOut(p, sz, color){
-  if(p.allOut) return true;
-  const ns = normOpt(sz);
-  if(!ns) return false;
-  if(p.out.indexOf(ns) > -1) return true;
-  const nc = normOpt(color || "");
-  return !!(nc && p.out.indexOf(nc + ":" + ns) > -1);
+  const nz = normOpt(sz), nc = normOpt(color || "");
+  if(nz && p.out.indexOf(nz) > -1) return true;
+  if(nc && nz && p.out.indexOf(nc + ":" + nz) > -1) return true;
+  if(nc && p.out.indexOf(nc) > -1) return true;
+  if(!nc){
+    // 색상 미선택 상태 — 어느 색상에서든 살아 있으면 선택 가능
+    const ks = Object.keys(p.combos).filter(k => k.slice(k.lastIndexOf("|") + 1) === nz);
+    if(!ks.length) return true;
+    return ks.every(k => p.combos[k].soldout);
+  }
+  const cb = p.combos[cKey(nc, nz)];
+  if(!cb) return true;
+  return !!cb.soldout;
 }
 function sizeOptsHtml(p, i){
   const color = pick[i] || "";
-  return p.sizes.map(sz => {
+  return sizesFor(p, color).map(sz => {
     const o = sizeOut(p, sz, color);
     return '<option value="' + esc(sz) + '"' + (o ? ' disabled' : '') + '>' + esc(sz) + (o ? ' · 품절' : '') + '</option>';
   }).join("");
 }
 function allSoldOut(p){
-  if(p.allOut) return true;
   if(!p.colors.length) return false;
-  if(!p.colors.every(c => c.soldout)) return false;
-  return true;
+  return p.colors.every(c => c.soldout);
 }
 
 function chgQty(i, d){
@@ -724,7 +801,13 @@ function setColor(i, v){
 }
 function setSize(i, v){ sizePick[i] = v; updateAddState(i); }
 function toggleSet(i, on){ setPick[i] = !!on; updateAddState(i); }
-function unitPrice(p, i){ return (isSet(p) && setPick[i]) ? CONFIG.SET_PRICE : p.price; }
+function unitPrice(p, i){
+  if(isSet(p) && setPick[i]) return CONFIG.SET_PRICE;
+  const nc = normOpt(needColor(p) ? (pick[i] || "") : "");
+  const nz = normOpt(isFree(p) ? p.sizes[0] : (sizePick[i] || ""));
+  const cb = p.combos[nc + "|" + nz];
+  return (cb && cb.price) ? cb.price : p.price;
+}
 function updateAddState(i){
   const btn = document.getElementById("addBtn" + i);
   if(!btn) return;
