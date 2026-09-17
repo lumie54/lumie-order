@@ -649,6 +649,24 @@ function chgQty(i, d){
 }
 function setColor(i, v){ pick[i] = v; }
 
+/* ---------- 재고 확인 (시트 '플리츠' 탭 재고 열 기준, 빈칸 = 무제한) ---------- */
+function findColor(no, color){
+  const p = PRODUCTS.find(x => x.no === Number(no));
+  return p ? p.colors.find(c => c.name === color) || null : null;
+}
+function cartNo(c){ return Number(String(c.name).match(/^(\d+)번/)?.[1] || 0); }
+function inCartQty(no, color, skip){
+  return cart.reduce((s, c, k) => s + ((k !== skip && cartNo(c) === Number(no) && c.opt === color) ? c.qty : 0), 0);
+}
+// 더 담을 수 있는 수량 (null = 무제한)
+function roomFor(no, color, skip){
+  const c = findColor(no, color);
+  if(!c) return null;
+  if(c.soldout) return 0;
+  if(c.stock === null || isNaN(c.stock)) return null;
+  return Math.max(0, c.stock - inCartQty(no, color, skip));
+}
+
 function renderList(reset){
   if(!loaded){
     $("cnt").textContent = "";
@@ -677,15 +695,16 @@ function renderList(reset){
   const view = hits.slice(0, shown);
   $("list").innerHTML = view.map(x => {
     const p = x.p, i = x.i;
-    const allSold = false;
+    const allSold = p.colors.length > 0 && p.colors.every(c => c.soldout);
     const opts = p.colors.map(c =>
-      '<option value="' + c.name + '">' + c.name + '</option>').join("");
+      '<option value="' + c.name + '"' + (c.soldout ? ' disabled' : '') + (!c.soldout && pick[i] === c.name ? ' selected' : '') + '>' +
+      c.name + (c.soldout ? ' (품절)' : '') + '</option>').join("");
     return `
     <div class="pitem ${allSold ? "sold" : ""}">
       <div class="nm">${p.no}번 · ${p.cat}</div>
       <div class="pr"><span class="now">${p.price.toLocaleString()}원</span></div>
-      <div class="meta">색상 ${p.colors.map(c => c.name).join(" · ")}</div>
-      <select id="cs${i}" onchange="setColor(${i}, this.value)" style="margin-top:9px;">
+      <div class="meta">색상 ${p.colors.map(c => c.soldout ? '<s style="color:#aaa;">' + c.name + '</s>' : c.name).join(" · ")}</div>
+      <select id="cs${i}" onchange="setColor(${i}, this.value)" style="margin-top:9px;" ${allSold ? "disabled" : ""}>
         <option value="">색상을 선택하세요</option>${opts}
       </select>
 
@@ -707,6 +726,15 @@ function addItem(i){
   if(!color){ alert("색상을 선택해주세요."); return; }
   const q = qty[i] || 1;
   const name = p.no + "번 " + p.cat;
+  const room = roomFor(p.no, color);
+  if(room === 0){
+    alert(p.no + "번 " + color + " 은(는) 품절입니다." + (inCartQty(p.no, color) ? "\n(이미 담으신 수량이 남은 재고 전부예요)" : ""));
+    loadProducts(); return;
+  }
+  if(room !== null && q > room){
+    alert(p.no + "번 " + color + " 남은 수량은 " + room + "개입니다.\n수량을 " + room + "개 이하로 선택해주세요.");
+    return;
+  }
   const same = cart.find(x => x.name === name && x.opt === color);
   if(same){
     if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + name + " (" + color + ")\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
@@ -727,6 +755,10 @@ function cartQty(i, d){
   const c = cart[i];
   if(!c) return;
   const next = c.qty + d;
+  if(d > 0){
+    const room = roomFor(cartNo(c), c.opt, i);
+    if(room !== null && next > room){ alert("남은 수량이 " + room + "개라 더 담을 수 없습니다."); return; }
+  }
   if(next < 1){
     if(!confirm("수량이 0이 됩니다.\n주문 목록에서 삭제할까요?")) return;
     cart.splice(i,1);
@@ -881,6 +913,28 @@ async function submitOrder(){
   }
   if(isAddl() && localStorage.getItem("lumie_last_order") !== todayStr()){
     if(!confirm("배송비가 '추가 주문 (배송비 없음)'으로 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 주문할까요?")) return;
+  }
+  // ★ 주문 직전 최신 재고 다시 확인 (결제 안 된 이전 카드주문을 고쳐 보내는 경우는 서버에서 처리)
+  if(!getPending()){
+    submitting = true;
+    const ok = await loadProducts(true);
+    submitting = false;
+    if(ok){
+      const msg = [];
+      for(let k = cart.length - 1; k >= 0; k--){
+        const c = cart[k];
+        const room = roomFor(cartNo(c), c.opt, k);
+        if(room !== null && c.qty > room){
+          msg.unshift("· " + c.name + "(" + c.opt + ") " + (room ? c.qty + "개 → " + room + "개" : "품절 → 삭제"));
+          if(room) c.qty = room; else cart.splice(k, 1);
+        }
+      }
+      if(msg.length){
+        renderCart(); renderList(false);
+        alert("주문하시는 사이 재고가 바뀌었어요.\n\n" + msg.join("\n") + "\n\n담긴 상품을 확인하고 다시 주문해주세요.");
+        return;
+      }
+    }
   }
   submitting = true;
   saveCustomer();
