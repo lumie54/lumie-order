@@ -623,7 +623,8 @@ async function loadProducts(silent){
         map[no].colors.push({
           name: String(r.color||""),
           stock: stock,
-          soldout: String(r.status||"").indexOf("품절") > -1 || stock === 0,
+          // ★ 0923: 재고 1개 이하(0 포함) = "품절" 표시만 하고 주문은 받음 (수량 제한 없음)
+          soldout: String(r.status||"").indexOf("품절") > -1 || (stock !== null && stock <= 1),
           memo: String(r.memo||"")
         });
       });
@@ -674,7 +675,7 @@ function inCartQty(no, color, skip){
 function roomFor(no, color, skip){
   const c = findColor(no, color);
   if(!c) return null;
-  if(c.soldout) return 0;
+  if(c.soldout) return null;   // 품절 표시 상품은 주문 가능 (제한 없음)
   if(c.stock === null || isNaN(c.stock)) return null;
   return Math.max(0, c.stock - inCartQty(no, color, skip));
 }
@@ -707,15 +708,15 @@ function renderList(reset){
   const view = hits.slice(0, shown);
   $("list").innerHTML = view.map(x => {
     const p = x.p, i = x.i;
-    const allSold = p.colors.length > 0 && p.colors.every(c => c.soldout);
+    const allSold = false;   // 품절 표시 상품도 주문 가능 → 흐리게/버튼 막기 안 함
     const opts = p.colors.map(c =>
-      '<option value="' + c.name + '"' + (c.soldout ? ' disabled' : '') + (!c.soldout && pick[i] === c.name ? ' selected' : '') + '>' +
+      '<option value="' + c.name + '"' + (pick[i] === c.name ? ' selected' : '') + '>' +
       c.name + (c.soldout ? ' (품절)' : '') + '</option>').join("");
     return `
     <div class="pitem ${allSold ? "sold" : ""}">
       <div class="nm">${p.no}번 · ${p.cat}</div>
       <div class="pr ${p.orig ? "hot" : ""}">${p.orig ? '<span class="old">' + p.orig.toLocaleString() + '원</span><span class="sale">특가</span>' : ''}<span class="now">${p.price.toLocaleString()}원</span></div>
-      <div class="meta">색상 ${p.colors.map(c => c.soldout ? '<s style="color:#aaa;">' + c.name + '</s>' : c.name).join(" · ")}</div>
+      <div class="meta">색상 ${p.colors.map(c => c.soldout ? '<span style="color:#B3402E;">' + c.name + '(품절)</span>' : c.name).join(" · ")}</div>
       <select id="cs${i}" onchange="setColor(${i}, this.value)" style="margin-top:9px;" ${allSold ? "disabled" : ""}>
         <option value="">색상을 선택하세요</option>${opts}
       </select>
