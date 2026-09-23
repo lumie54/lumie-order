@@ -744,13 +744,9 @@ function addItem(i){
     if(!confirm("⚠️ " + p.no + "번 " + color + " 은(는) 품절 상품입니다.\n\n주문은 가능하지만 입고 후 발송되어\n영업일 기준 10일 정도 소요될 수 있습니다.\n\n그래도 주문하시겠습니까?")) return;
   }
   const room = roomFor(p.no, color);
-  if(room === 0){
-    alert(p.no + "번 " + color + " 은(는) 품절입니다." + (inCartQty(p.no, color) ? "\n(이미 담으신 수량이 남은 재고 전부예요)" : ""));
-    loadProducts(); return;
-  }
+  // ★ 0923: 재고보다 많이 담아도 주문 가능 — 바로배송 아님 안내만
   if(room !== null && q > room){
-    alert(p.no + "번 " + color + " 남은 수량은 " + room + "개입니다.\n수량을 " + room + "개 이하로 선택해주세요.");
-    return;
+    if(!confirm("⚠️ " + p.no + "번 " + color + " 바로배송 가능 수량은 " + room + "개입니다." + "\n\n바로배송 재고를 넘는 수량은 입고 후 발송되어\n영업일 기준 10일 정도 소요될 수 있습니다.\n\n그래도 주문하시겠습니까?")) return;
   }
   const same = cart.find(x => x.name === name && x.opt === color);
   if(same){
@@ -774,7 +770,7 @@ function cartQty(i, d){
   const next = c.qty + d;
   if(d > 0){
     const room = roomFor(cartNo(c), c.opt, i);
-    if(room !== null && next > room){ alert("남은 수량이 " + room + "개라 더 담을 수 없습니다."); return; }
+    if(room !== null && next > room && c.qty <= room){ if(!confirm("⚠️ " + c.name + "(" + c.opt + ") 바로배송 가능 수량은 " + room + "개입니다." + "\n\n바로배송 재고를 넘는 수량은 입고 후 발송되어\n영업일 기준 10일 정도 소요될 수 있습니다.\n\n그래도 주문하시겠습니까?")) return; }
   }
   if(next < 1){
     if(!confirm("수량이 0이 됩니다.\n주문 목록에서 삭제할까요?")) return;
@@ -941,7 +937,7 @@ async function submitOrder(){
       for(let k = cart.length - 1; k >= 0; k--){
         const c = cart[k];
         const room = roomFor(cartNo(c), c.opt, k);
-        if(room !== null && c.qty > room){
+        if(false && room !== null && c.qty > room){   // 0923: 재고 초과 주문 허용 (담을 때 안내함)
           msg.unshift("· " + c.name + "(" + c.opt + ") " + (room ? c.qty + "개 → " + room + "개" : "품절 → 삭제"));
           if(room) c.qty = room; else cart.splice(k, 1);
         }
