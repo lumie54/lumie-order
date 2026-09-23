@@ -152,6 +152,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .pitem .pr{margin-top:6px;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
 .pitem .old{font-size:12.5px;color:var(--sub);text-decoration:line-through;}
 .pitem .now{font-size:18px;font-weight:800;color:var(--accent-dark);}
+.pitem .sale{font-size:11.5px;font-weight:800;color:#fff;background:#B3402E;border-radius:20px;padding:2px 8px;}
+.pitem .pr.hot .now{color:#B3402E;}
 .badge{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:6px;}
 .b1{background:#B3402E;color:#fff;}
 .b2{background:#C97B30;color:#fff;}
@@ -610,9 +612,12 @@ async function loadProducts(silent){
         if(!no) return;
         if(!map[no]){
           map[no] = { no, code: String(r.code||""), cat: String(r.cat||""),
-                      price: Number(r.price)||0, colors: [] };
+                      price: Number(r.price)||0, orig: 0, colors: [] };
           order.push(no);
         }
+        // 특가: 시트 J열(정상가)이 가격보다 크면 정상가 취소선 + 특가 표시
+        { const o = Number(String(r.memo||"").replace(/[^0-9]/g,"")) || 0;
+          if(o > map[no].price && !map[no].orig) map[no].orig = o; }
         const stockRaw = String(r.stock === undefined ? "" : r.stock).trim();
         const stock = stockRaw === "" ? null : Number(stockRaw);
         map[no].colors.push({
@@ -625,6 +630,12 @@ async function loadProducts(silent){
       order.sort((a,b)=>a-b);
       PRODUCTS = order.map(n => map[n]);
       loaded = true;
+      // 장바구니에 담아둔 상품 가격을 최신 가격(특가)으로 맞춤
+      try{
+        let changed = false;
+        cart.forEach(c => { const p = PRODUCTS.find(x => x.no === cartNo(c)); if(p && p.price && c.price !== p.price){ c.price = p.price; changed = true; } });
+        if(changed){ saveCart(); renderCart(); }
+      }catch(e){}
       if(!silent) renderList(false);
       return true;
     }
@@ -703,7 +714,7 @@ function renderList(reset){
     return `
     <div class="pitem ${allSold ? "sold" : ""}">
       <div class="nm">${p.no}번 · ${p.cat}</div>
-      <div class="pr"><span class="now">${p.price.toLocaleString()}원</span></div>
+      <div class="pr ${p.orig ? "hot" : ""}">${p.orig ? '<span class="old">' + p.orig.toLocaleString() + '원</span><span class="sale">특가</span>' : ''}<span class="now">${p.price.toLocaleString()}원</span></div>
       <div class="meta">색상 ${p.colors.map(c => c.soldout ? '<s style="color:#aaa;">' + c.name + '</s>' : c.name).join(" · ")}</div>
       <select id="cs${i}" onchange="setColor(${i}, this.value)" style="margin-top:9px;" ${allSold ? "disabled" : ""}>
         <option value="">색상을 선택하세요</option>${opts}
