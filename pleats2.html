@@ -739,6 +739,10 @@ function addItem(i){
   if(!color){ alert("색상을 선택해주세요."); return; }
   const q = qty[i] || 1;
   const name = p.no + "번 " + p.cat;
+  const fc = findColor(p.no, color);
+  if(fc && fc.soldout){
+    if(!confirm("⚠️ " + p.no + "번 " + color + " 은(는) 품절 상품입니다.\n\n주문은 가능하지만 입고 후 발송되어\n영업일 기준 10일 정도 소요될 수 있습니다.\n\n그래도 주문하시겠습니까?")) return;
+  }
   const room = roomFor(p.no, color);
   if(room === 0){
     alert(p.no + "번 " + color + " 은(는) 품절입니다." + (inCartQty(p.no, color) ? "\n(이미 담으신 수량이 남은 재고 전부예요)" : ""));
