@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#B08D57">
+<title>르미에 댓글주문 결제</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5EFE6; --card:#FFFFFF; --soft:#FBF7F0;
+  --ink:#3E332A; --sub:#8A7A68;
+  --accent:#B08D57; --accent-dark:#8F6F3F;
+  --line:#E5DACB; --danger:#B3402E; --ok:#4E7A4E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:"Pretendard",-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased;}
+button,input{font-family:inherit;color:inherit;}
+.wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px;}
+.brand{text-align:center;padding:26px 0 18px;}
+.brand .logo{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:40px;font-weight:600;color:var(--accent-dark);letter-spacing:1px;}
+.brand .name{font-size:13px;letter-spacing:6px;color:var(--sub);margin-top:2px;}
+.brand .divider{width:36px;height:2px;background:var(--accent);margin:14px auto 0;border-radius:2px;}
+h1.page-title{font-size:20px;font-weight:700;text-align:center;margin-bottom:6px;}
+.page-sub{text-align:center;color:var(--sub);font-size:13.5px;margin-bottom:20px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(62,51,42,.05);}
+.sec{font-size:15px;font-weight:800;margin-bottom:12px;}
+label.fld{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:12px 0 5px;}
+label.fld:first-of-type{margin-top:0;}
+.opt{font-weight:500;font-size:12px;}
+input[type=text],input[type=tel]{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;background:#fff;}
+input[readonly]{background:var(--soft);}
+input:focus{outline:none;border-color:var(--accent);}
+.line2{display:flex;gap:8px;}
+.btn{display:block;width:100%;text-align:center;border:none;cursor:pointer;border-radius:12px;padding:15px;font-size:16px;font-weight:700;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:var(--accent-dark);}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-sm{flex:none;border:1px solid var(--accent);background:#fff;color:var(--accent-dark);font-size:13px;font-weight:700;border-radius:10px;padding:0 12px;cursor:pointer;white-space:nowrap;}
+.hint{font-size:12.5px;color:var(--sub);margin-top:8px;}
+.hint.ok{color:var(--ok);} .hint.err{color:var(--danger);}
+.notice{background:var(--soft);border:1px dashed var(--accent);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--accent-dark);margin-bottom:14px;}
+.policy{background:#FBF3F1;border:1.5px solid #E7C8C0;border-radius:12px;padding:15px;margin-bottom:16px;}
+.policy .pt{font-size:14px;font-weight:800;color:var(--danger);margin-bottom:8px;}
+.policy p{font-size:13.5px;margin-bottom:6px;}
+.nicklist{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.nickbtn{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
+.nickbtn span{color:var(--accent-dark);font-size:13px;}
+.empty{text-align:center;color:var(--sub);padding:14px 0 4px;font-size:14px;}
+
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.bar .who{flex:1;font-weight:800;font-size:17px;}
+.bar button{background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:700;cursor:pointer;color:var(--accent-dark);}
+
+.order{display:flex;gap:12px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;}
+.order.dis{background:#fff;cursor:default;}
+.order.dis .ob{opacity:.55;}
+.chk{appearance:none;-webkit-appearance:none;flex:none;width:24px;height:24px;border:2px solid #CDBFA9;border-radius:7px;background:#fff;cursor:pointer;margin-top:1px;}
+.chk:checked{background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/17px no-repeat;border-color:var(--accent);}
+.chk:disabled{background:#F1EBE2;border-color:#E5DACB;}
+.ob{flex:1;min-width:0;}
+.ob .code{font-size:12px;color:var(--accent-dark);font-weight:700;}
+.ob .nm{font-size:15px;font-weight:700;word-break:keep-all;}
+.ob .op{font-size:13px;color:var(--sub);margin-top:2px;}
+.ob .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13.5px;}
+.ob .amt{font-weight:800;color:var(--accent-dark);font-size:15px;}
+.badge{font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 7px;margin-left:6px;vertical-align:1px;}
+.badge.미결제{background:#FBEFC8;color:#7A5E12;}
+.badge.카드결제대기{background:#FBE3DC;color:var(--danger);}
+.badge.입금대기{background:#E6EEF8;color:#2D4F7C;}
+.badge.결제완료{background:#E3EFE4;color:var(--ok);}
+.count{text-align:right;font-size:13px;color:var(--sub);}
+
+.choice{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.choice.two{grid-template-columns:1fr 1fr;}
+.choice button{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 4px;cursor:pointer;text-align:center;}
+.choice button small{display:block;font-size:12.5px;color:var(--sub);font-weight:600;}
+.choice button b{font-size:14.5px;}
+.choice button.on{border-color:var(--accent);background:var(--soft);box-shadow:inset 0 0 0 1px var(--accent);}
+.choice button.on small{color:var(--accent-dark);}
+.choice button:disabled{opacity:.35;cursor:not-allowed;}
+.sum{margin-top:14px;border-top:1px solid var(--line);}
+.sum .r{display:flex;justify-content:space-between;padding:10px 0;font-size:14px;}
+.sum .r b{font-weight:700;}
+.sum .tot{border-top:1px solid var(--line);padding-top:12px;font-size:16px;font-weight:800;}
+.sum .tot b{font-size:21px;color:var(--accent-dark);}
+.agree{display:flex;gap:10px;align-items:flex-start;margin:14px 0;font-size:13.5px;cursor:pointer;}
+.agree .chk{width:22px;height:22px;}
+
+.acct{display:flex;align-items:center;gap:10px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;}
+.acct div{flex:1;}
+.acct .num{font-size:17px;font-weight:800;}
+.acct .bank{font-size:12.5px;color:var(--sub);}
+.done-amt{text-align:center;padding:6px 0 4px;}
+.done-amt .l{font-size:13px;color:var(--sub);}
+.done-amt .v{font-size:28px;font-weight:800;color:var(--accent-dark);}
+a.btn{text-decoration:none;}
+footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;letter-spacing:2px;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(62,51,42,.45);z-index:50;align-items:center;justify-content:center;}
+.overlay.show{display:flex;}
+.overlay .box{background:#fff;border-radius:14px;padding:22px 26px;font-weight:700;}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;display:none;z-index:60;}
+[hidden]{display:none!important;}
+:focus-visible{outline:3px solid #E2CFA8;outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="logo">lumie</div>
+    <div class="name">르 미 에</div>
+    <div class="divider"></div>
+  </div>
+
+  <!-- ① 닉네임 찾기 -->
+  <section id="sSearch">
+    <h1 class="page-title">댓글주문 결제</h1>
+    <p class="page-sub">방송 중 댓글로 주문 주신 상품, 여기서 한 번에 결제하세요.</p>
+
+    <div class="card">
+      <label class="fld" for="q">닉네임</label>
+      <input type="text" id="q" placeholder="댓글에 쓴 닉네임 (두세 글자만 넣어도 돼요)" autocomplete="off" enterkeyhint="search">
+      <div style="margin-top:14px;"><button class="btn btn-primary" id="goSearch">🔍 내 주문 찾기</button></div>
+      <p class="hint">'주문완료' 안내를 들으신 뒤 1~2분쯤 지나면 목록에 올라와요. 한참 지나도 안 보이면 채널로 닉네임을 남겨주세요.</p>
+      <div class="nicklist" id="nicks"></div>
+      <p class="hint" id="nickWarn" hidden style="color:var(--danger);font-weight:700;">⚠️ 비슷한 닉네임이 여러 개 있어요. 띄어쓰기·숫자·특수문자까지 <u>내 닉네임과 똑같은지</u> 꼭 확인하고 눌러주세요.</p>
+    </div>
+
+    <div class="policy">
+      <div class="pt">🚫 결제 전에 꼭 확인해주세요</div>
+      <p>라이브방송 상품은 수령 후 <b>교환 · 반품이 불가</b>합니다. (단순 변심 · 사이즈 · 착용감 · 미세 하자 포함)</p>
+      <p>· 취소는 <b>방송 중 댓글</b>로 말씀해주세요. 방송이 끝난 뒤에는 변경·취소가 어려워요.</p>
+      <p>· 중대한 하자 · 오배송 · 파손은 <b>수령 후 24시간 이내</b> 사진과 함께 채널로 문의해주세요.</p>
+    </div>
+  </section>
+
+  <!-- ② 주문 확인 · 결제 -->
+  <section id="sOrder" hidden>
+    <div class="bar">
+      <button id="back">‹ 닉네임 다시 찾기</button>
+      <span class="who"></span>
+      <button id="reload">↻ 다시 불러오기</button>
+    </div>
+
+    <div class="card">
+      <div class="sec" id="oHead"></div>
+      <div class="notice" style="border-color:#E7C8C0;background:#FBF3F1;color:var(--danger);">👀 <b id="nickChk"></b> 님이 맞나요? 비슷한 닉네임의 다른 분 주문일 수 있어요. 상품 목록이 내가 주문한 것과 다르면 '‹ 닉네임 다시 찾기'를 눌러주세요.</div>
+      <div class="notice">✔ 체크된 상품이 이번에 결제할 상품이에요.<br>이미 결제하셨거나 입금 확인 중인 상품은 흐리게 보여요.</div>
+      <div id="items"></div>
+      <p class="count" id="count"></p>
+    </div>
+
+    <div class="card" id="shipCard">
+      <div class="sec">🏠 받으실 곳</div>
+      <label class="fld" for="cName">수령인</label>
+      <input type="text" id="cName" autocomplete="name">
+      <label class="fld" for="cPhone">연락처</label>
+      <div class="line2"><input type="tel" id="cPhone" inputmode="tel" placeholder="010-0000-0000" autocomplete="tel">
+        <button class="btn-sm" id="loadAddr">지난 배송지</button></div>
+      <p class="hint" id="addrMsg">르미에에서 주문하신 적이 있다면 연락처를 넣고 '지난 배송지'를 눌러보세요.</p>
+      <label class="fld">주소</label>
+      <div class="line2"><input type="text" id="cZip" placeholder="우편번호" readonly style="max-width:130px">
+        <button class="btn-sm" id="findAddr">주소 검색</button></div>
+      <input type="text" id="cAddr" placeholder="주소 검색을 눌러주세요" readonly style="margin-top:8px">
+      <input type="text" id="cAddr2" placeholder="상세 주소 (동 · 호수)" style="margin-top:8px">
+      <label class="fld" for="cMemo">배송 메모 <span class="opt">(선택)</span></label>
+      <input type="text" id="cMemo" placeholder="예) 문 앞에 두고 벨 눌러주세요">
+      <label class="fld" for="cReq">르미에에 요청사항 <span class="opt">(선택)</span></label>
+      <input type="text" id="cReq">
+    </div>
+
+    <div class="card" id="payCard">
+      <div class="sec">🚚 배송비</div>
+      <div class="choice">
+        <button data-s="normal"><small>기본 배송</small><b>4,000원</b></button>
+        <button data-s="island"><small>제주 · 도서산간</small><b>7,000원</b></button>
+        <button data-s="addl"><small>오늘 합배송</small><b>0원</b></button>
+      </div>
+      <p class="hint" id="shipMsg"></p>
+
+      <div class="sec" style="margin-top:20px;">💳 결제 방법</div>
+      <div class="choice two">
+        <button class="on" data-p="계좌이체"><small>계좌이체</small><b>닉네임으로 입금</b></button>
+        <button data-p="카드"><small>카드결제</small><b id="vatLbl">부가세 10%</b></button>
+      </div>
+
+      <div class="sum">
+        <div class="r"><span>상품 금액</span><b id="sGoods">0원</b></div>
+        <div class="r"><span>배송비</span><b id="sShip">0원</b></div>
+        <div class="r" id="vatRow" hidden><span>카드 부가세</span><b id="sVat">0원</b></div>
+        <div class="r tot"><span id="sTotLbl">입금하실 금액</span><b id="sTot">0원</b></div>
+      </div>
+
+      <label class="agree"><input type="checkbox" class="chk" id="agree">
+        <span>상품 · 배송지를 확인했고, <b>교환 · 반품 불가</b> 규정에 동의합니다.</span></label>
+      <button class="btn btn-primary" id="submit" disabled>결제할 상품을 골라주세요</button>
+    </div>
+  </section>
+
+  <!-- ③ 완료 -->
+  <section id="sDone" hidden>
+    <h1 class="page-title" id="dTitle">주문서가 접수됐어요</h1>
+    <p class="page-sub" id="dSub"></p>
+    <div class="card">
+      <div class="done-amt"><div class="l" id="dLbl">입금하실 금액</div><div class="v" id="dAmt"></div></div>
+      <div id="dBank">
+        <div class="acct"><div><div class="num">3333-18-3356907</div><div class="bank">카카오뱅크 · 김푸름</div></div>
+          <button class="btn-sm" style="padding:9px 12px" data-copy="3333-18-3356907">복사</button></div>
+        <p class="hint">입금자명은 꼭 <b>닉네임</b>으로 해주세요. 확인되는 대로 차례차례 보내드려요.</p>
+      </div>
+      <div id="dCard" hidden>
+        <a class="btn btn-dark" id="payBtn" href="#" style="margin-top:6px">결제창 여는 중…</a>
+        <p class="hint err" id="payFail" hidden></p>
+        <p class="hint">결제창이 안 뜨면 이 페이지에 다시 들어와 결제해주세요. 계좌이체로 바꾸셔도 괜찮아요.</p>
+      </div>
+      <div id="dPaid" hidden><p class="hint ok" style="text-align:center">결제 확인 완료! 예쁘게 챙겨서 보내드릴게요 🤎</p></div>
+      <button class="btn btn-primary" id="again" style="margin-top:16px">내 댓글주문 다시 보기</button>
+    </div>
+    <p class="hint" style="text-align:center;">배송 상황은 <a href="lookup.html" style="color:var(--accent-dark);font-weight:700;">내 주문 조회</a>에서 확인하실 수 있어요.</p>
+  </section>
+
+  <footer>LUMIE · 르미에</footer>
+</div>
+
+<div class="overlay" id="dim"><div class="box" id="dimT">불러오는 중입니다…</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 설정 ================= */
+const CONFIG = {
+  SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
+  SHIP: { normal: 4000, island: 7000, addl: 0 },
+  FREE_SHIP_MIN: 150000,          // 이번 결제 상품이 이 금액 이상이면 무료배송
+  CARD_VAT_RATE: 0.10,            // 카드결제 부가세 (상품금액 기준)
+  RETURN_PAGE: "pay",             // 카드 결제 후 돌아올 파일명
+  CAT: "lalila",                  // 주문 데이터 cat (라릴라 재고·집계와 같이 묶임)
+  OID_PREFIX: "L",                // 주문번호 앞글자 (라릴라와 같음)
+  AGREE: "교환·반품 불가 규정 동의",
+};
+
+const $ = id => document.getElementById(id);
+const won = n => Number(n||0).toLocaleString("ko-KR") + "원";
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SAVE_KEY = "lumie_customer", PENDING_KEY = "lumie_cmt_pending", NICK_KEY = "lumie_cmt_nick";
+let DATA = null, SHIP = "normal", PAY = "계좌이체", sending = false, curOid = "";
+
+function dim(on, t){ $("dimT").textContent = t || "불러오는 중입니다…"; $("dim").classList.toggle("show", on); }
+function toast(m){ const t=$("toast"); t.textContent=m; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",1800); }
+async function api(mode, params){
+  const qs = new URLSearchParams(Object.assign({ mode, t: Date.now() }, params||{}));
+  const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString());
+  return r.json();
+}
+function show(id){ ["sSearch","sOrder","sDone"].forEach(s => $(s).hidden = s!==id); window.scrollTo(0,0); }
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-copy]"); if(!b) return;
+  try{ await navigator.clipboard.writeText(b.dataset.copy); toast("계좌번호를 복사했어요"); }
+  catch(err){ prompt("길게 눌러 복사해 주세요", b.dataset.copy); }
+});
+$("vatLbl").textContent = "부가세 " + Math.round(CONFIG.CARD_VAT_RATE*100) + "%";
+
+/* ---------- ① 닉네임 검색 ---------- */
+async function search(){
+  const q = $("q").value.trim();
+  if(!q){ $("q").focus(); return; }
+  dim(true, "닉네임 찾는 중…");
+  try{
+    const j = await api("cmtsearch", { q });
+    const list = (j.ok && j.nicks) || [];
+    $("nicks").innerHTML = list.length
+      ? list.map(n => `<button class="nickbtn" data-n="${esc(n)}">${esc(n)}<span>이 닉네임이 저예요 ›</span></button>`).join("")
+      : `<p class="empty">'${esc(q)}'(으)로 찾은 댓글주문이 아직 없어요.<br>글자 수를 줄이거나 잠시 뒤 다시 찾아보세요.</p>`;
+    $("nickWarn").hidden = list.length < 2;
+  }catch(e){ $("nicks").innerHTML = `<p class="empty">연결이 잠깐 불안정해요. 다시 한 번 눌러주세요.</p>`; }
+  dim(false);
+}
+$("goSearch").onclick = search;
+$("q").addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing) search(); });
+$("nicks").addEventListener("click", e => { const b = e.target.closest(".nickbtn"); if(b) openNick(b.dataset.n); });
+
+/* ---------- ② 주문 보기 ---------- */
+async function openNick(nick){
+  dim(true, "댓글주문 불러오는 중…");
+  try{
+    const j = await api("cmtitems", { nick });
+    if(!j.ok) throw new Error(j.msg);
+    DATA = j;
+    try{ localStorage.setItem(NICK_KEY, j.nick); }catch(e){}
+    render();
+    show("sOrder");
+  }catch(e){ toast("불러오지 못했어요. 다시 눌러주세요."); }
+  dim(false);
+}
+$("back").onclick = () => show("sSearch");
+$("reload").onclick = () => DATA && openNick(DATA.nick);
+
+const SELECTABLE = s => s==="미결제" || s==="카드결제대기";
+const STATUS_TXT = { "미결제":"결제 전", "카드결제대기":"카드 결제 안 끝남", "입금대기":"입금 확인 중", "결제완료":"결제 끝" };
+
+function render(){
+  const { nick, items } = DATA;
+  $("oHead").textContent = "🛍 " + nick + "님 댓글주문";
+  $("nickChk").textContent = nick;
+  $("items").innerHTML = items.length ? items.map((it,i) => {
+    const sel = SELECTABLE(it.status);
+    const opt = [it.color, it.size ? (it.size.toUpperCase()==="FREE" ? "FREE" : "사이즈 " + it.size) : ""].filter(Boolean).join(" · ");
+    return `<label class="order${sel?"":" dis"}">
+      <input type="checkbox" class="chk" data-i="${i}" ${sel?"checked":"disabled"} aria-label="${esc(it.name)} 선택">
+      <div class="ob">
+        ${it.code ? `<div class="code">${esc(/^\d+$/.test(it.code) ? it.code + "번" : it.code)}</div>` : ""}
+        <div class="nm">${esc(it.name)}<span class="badge ${esc(it.status)}">${esc(STATUS_TXT[it.status]||it.status)}</span></div>
+        ${opt ? `<div class="op">${esc(opt)}</div>` : ""}
+        <div class="row"><span>${won(it.price)} · ${it.qty}개</span><span class="amt">${won(it.price*it.qty)}</span></div>
+      </div></label>`;
+  }).join("") : `<p class="empty">지금 결제할 댓글주문이 없어요.</p>`;
+
+  const anySel = items.some(it => SELECTABLE(it.status));
+  $("shipCard").hidden = !anySel; $("payCard").hidden = !anySel;
+  SHIP = DATA.orderedToday ? "addl" : "normal";
+  loadSaved();
+  calc();
+}
+$("items").addEventListener("change", calc);
+document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { SHIP = b.dataset.s; calc(); });
+document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { PAY = b.dataset.p; calc(); });
+$("agree").onchange = calc;
+
+function picked(){ return [...document.querySelectorAll("#items .chk:checked")].map(c => DATA.items[c.dataset.i]); }
+function goodsOf(list){ return list.reduce((s,it)=>s+it.price*it.qty, 0); }
+function isFree(goods){ return goods >= CONFIG.FREE_SHIP_MIN; }
+function shipFee(goods){ if(!goods) return 0; if(isFree(goods)) return 0; return CONFIG.SHIP[SHIP] || 0; }
+function vatOf(goods){ return PAY==="카드" ? Math.round(goods*CONFIG.CARD_VAT_RATE) : 0; }
+
+function calc(){
+  if(!DATA) return;
+  const sel = picked(), goods = goodsOf(sel), qty = sel.reduce((s,it)=>s+it.qty,0);
+  const total = DATA.items.length;
+  $("count").textContent = total ? `${sel.length}개 상품 · 수량 ${qty}개 결제 예정` : "";
+  const free = isFree(goods);
+  document.querySelectorAll("[data-s]").forEach(b => { b.classList.toggle("on", !free && b.dataset.s===SHIP); b.disabled = free; });
+  document.querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p===PAY));
+  $("shipMsg").textContent = free ? `🎉 ${won(CONFIG.FREE_SHIP_MIN)} 넘어서 배송비는 저희가 낼게요!`
+    : SHIP==="addl" ? (DATA.orderedToday ? "오늘 먼저 결제하신 주문이 있어서 같이 묶어 보내드려요." : "오늘 이미 결제한 주문이 있을 때만 골라주세요.")
+    : `상품 금액이 ${won(CONFIG.FREE_SHIP_MIN)} 이상이면 배송비가 없어요.`;
+  const ship = shipFee(goods), vat = vatOf(goods);
+  $("sGoods").textContent = won(goods); $("sShip").textContent = won(ship);
+  $("vatRow").hidden = !vat; $("sVat").textContent = won(vat);
+  $("sTotLbl").textContent = PAY==="카드" ? "결제하실 금액" : "입금하실 금액";
+  $("sTot").textContent = won(goods + ship + vat);
+  const btn = $("submit");
+  btn.disabled = !sel.length || !$("agree").checked;
+  btn.textContent = !sel.length ? "결제할 상품을 골라주세요" : !$("agree").checked ? "위 동의에 체크해주세요"
+    : PAY==="카드" ? `💳 ${won(goods+ship+vat)} 카드결제 하러 가기` : `${won(goods+ship)} 입금 주문 넣기`;
+}
+
+/* ---------- 배송지 ---------- */
+function loadSaved(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if(!d) return;
+    if(!$("cName").value) $("cName").value = d.name||"";
+    if(!$("cPhone").value) $("cPhone").value = d.phone||"";
+    if(!$("cAddr").value){ $("cZip").value = d.zip||""; $("cAddr").value = d.addr||""; $("cAddr2").value = d.addr2||""; }
+  }catch(e){}
+}
+function saveCustomer(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ nick: DATA.nick, name:$("cName").value, phone:$("cPhone").value,
+    zip:$("cZip").value, addr:$("cAddr").value, addr2:$("cAddr2").value })); }catch(e){}
+}
+$("loadAddr").onclick = async () => {
+  const phone = $("cPhone").value.replace(/[^0-9]/g,"");
+  if(phone.length < 10){ $("addrMsg").className = "hint err"; $("addrMsg").textContent = "연락처부터 넣어주세요."; $("cPhone").focus(); return; }
+  dim(true, "배송지 찾는 중…");
+  try{
+    const j = await api("cmtaddr", { nick: DATA.nick, phone });
+    if(j.ok){
+      if(j.recv) $("cName").value = j.recv;
+      $("cZip").value = j.zip||""; $("cAddr").value = j.addr||""; $("cAddr2").value = "";
+      if(j.memo && !$("cMemo").value) $("cMemo").value = j.memo;
+      $("addrMsg").className = "hint ok"; $("addrMsg").textContent = "지난번 주소를 가져왔어요. 이사하셨다면 다시 검색해주세요.";
+    }else{ $("addrMsg").className = "hint err"; $("addrMsg").textContent = j.msg || "저장된 배송지가 없어요. 새로 입력해주세요."; }
+  }catch(e){ $("addrMsg").className = "hint err"; $("addrMsg").textContent = "가져오지 못했어요. 직접 입력해주세요."; }
+  dim(false);
+};
+let pcLoaded = false;
+$("findAddr").onclick = () => {
+  const run = () => new daum.Postcode({ oncomplete: d => { $("cZip").value = d.zonecode; $("cAddr").value = d.roadAddress || d.jibunAddress; $("cAddr2").focus(); } }).open();
+  if(pcLoaded) return run();
+  const sc = document.createElement("script");
+  sc.src = "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
+  sc.onload = () => { pcLoaded = true; run(); };
+  sc.onerror = () => alert("주소 검색을 불러오지 못했어요. 네트워크 확인 후 다시 시도해 주세요.");
+  document.body.appendChild(sc);
+};
+$("cAddr").addEventListener("click", () => $("findAddr").click());
+
+/* ---------- 결제 ---------- */
+function makeOid(){
+  const d = new Date(), p = n => String(n).padStart(2,"0");
+  return CONFIG.OID_PREFIX + String(d.getFullYear()).slice(2) + p(d.getMonth()+1) + p(d.getDate()) + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + Math.random().toString(36).slice(2,6).toUpperCase();
+}
+$("submit").onclick = async () => {
+  if(sending) return;
+  const sel = picked(); if(!sel.length) return;
+  const need = [["cName","수령인"],["cPhone","연락처"],["cAddr","주소"]];
+  for(const [id,l] of need){ if(!$(id).value.trim()){ alert(l + "을(를) 입력해 주세요."); (id==="cAddr" ? $("findAddr") : $(id)).focus(); return; } }
+  const phoneD = $("cPhone").value.replace(/[^0-9]/g,"");
+  if(phoneD.length < 10){ alert("연락처를 확인해 주세요."); $("cPhone").focus(); return; }
+  if(PAY==="카드" && !/^01[016789]\d{7,8}$/.test(phoneD)){ alert("카드결제는 휴대폰 번호가 필요해요."); $("cPhone").focus(); return; }
+  if(SHIP==="addl" && !DATA.orderedToday && !isFree(goodsOf(sel)) &&
+     !confirm("'오늘 합배송(배송비 0원)'을 고르셨어요.\n오늘 먼저 결제한 주문이 있을 때만 해당돼요.\n\n이대로 진행할까요?")) return;
+
+  const goods = goodsOf(sel), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
+  if(PAY==="카드" && total < 1000){ alert("카드결제는 1,000원 이상부터 가능해요."); return; }
+  if(!confirm(`상품 ${sel.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
+
+  sending = true; dim(true, "주문 넣는 중…");
+  curOid = makeOid();
+  try{
+    // 1) 고른 상품에 주문번호 찍기 (서버가 금액·주문내역을 다시 계산)
+    const c = await api("cmtclaim", { nick: DATA.nick, oid: curOid, ids: sel.map(it=>it.id).join(",") });
+    if(!c.ok){ dim(false); sending = false; alert(c.msg || "주문 접수에 실패했어요."); openNick(DATA.nick); return; }
+    if(Number(c.goods) !== goods){ dim(false); sending = false; alert("상품 금액이 바뀌었어요. 새로 불러올게요."); openNick(DATA.nick); return; }
+    const addl = ship === 0 && SHIP === "addl" && !isFree(goods);
+
+    // 2) 기존 주문 접수 (주문접수 탭)
+    const order = {
+      time: new Date().toLocaleString("ko-KR"),
+      nick: DATA.nick, name: $("cName").value.trim(), phone: $("cPhone").value.trim(),
+      zip: $("cZip").value.trim(), addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
+      memo: $("cMemo").value.trim(), req: ("[댓글주문] " + $("cReq").value.trim()).trim(),
+      items: c.items + (addl ? " [추가주문]" : ""),
+      goods, ship, vat, total, agree: CONFIG.AGREE, pay: PAY, oid: curOid,
+      replace: c.replace || "", cat: CONFIG.CAT,
+    };
+    await fetch(CONFIG.SHEET_URL, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(order) });
+    saveCustomer();
+    try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
+    doneScreen(total);
+  }catch(e){
+    alert("주문이 전송되지 않았어요. 인터넷 연결을 확인하고 다시 눌러주세요.");
+  }
+  dim(false); sending = false;
+};
+function todayStr(){ const d = new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+
+/* ---------- ③ 완료 ---------- */
+function doneScreen(total){
+  $("dAmt").textContent = won(total);
+  $("dPaid").hidden = true;
+  if(PAY === "카드"){
+    $("dTitle").textContent = "이제 카드결제만 하면 끝!";
+    $("dSub").textContent = "주문번호 " + curOid;
+    $("dLbl").textContent = "결제하실 금액 (부가세 포함)";
+    $("dBank").hidden = true; $("dCard").hidden = false;
+    try{ localStorage.setItem(PENDING_KEY, JSON.stringify({ oid: curOid, ts: Date.now() })); }catch(e){}
+    getPayLink();
+  }else{
+    $("dTitle").textContent = "주문서가 접수됐어요";
+    $("dSub").textContent = "아래 계좌로 닉네임 입금해주시면 끝이에요.";
+    $("dLbl").textContent = "입금하실 금액";
+    $("dBank").hidden = false; $("dCard").hidden = true;
+  }
+  show("sDone");
+}
+async function getPayLink(){
+  const btn = $("payBtn");
+  btn.textContent = "결제창 여는 중…"; btn.style.opacity = ".5"; btn.href = "#"; $("payFail").hidden = true;
+  let msg = "";
+  for(let i=0; i<4; i++){
+    try{
+      const j = await api("paylink", { o: curOid, r: CONFIG.RETURN_PAGE });
+      if(j.ok && j.payurl){ btn.href = j.payurl; btn.textContent = "💳 " + $("dAmt").textContent + " 카드결제 하기"; btn.style.opacity = "1"; return; }
+      msg = j.msg || ""; if(!j.retry) break;
+    }catch(e){ msg = "통신 오류"; }
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  btn.textContent = "결제창 다시 열기"; btn.style.opacity = "1";
+  btn.onclick = e => { if(btn.getAttribute("href")==="#"){ e.preventDefault(); getPayLink(); } };
+  $("payFail").textContent = "결제창을 열지 못했어요. " + msg; $("payFail").hidden = false;
+}
+$("again").onclick = () => {
+  let n = DATA && DATA.nick; try{ n = n || localStorage.getItem(NICK_KEY); }catch(e){}
+  n ? openNick(n) : show("sSearch");
+};
+
+/* 카드 결제 후 복귀 (?paid=주문번호) */
+(async function checkReturn(){
+  const m = location.search.match(/[?&]paid=([^&]+)/);
+  if(!m) { const n = (()=>{ try{ return localStorage.getItem(NICK_KEY); }catch(e){ return ""; } })(); if(n) $("q").value = n; return; }
+  const oid = decodeURIComponent(m[1]);
+  try{ localStorage.removeItem(PENDING_KEY); }catch(e){}
+  $("dTitle").textContent = "카드결제 완료!";
+  $("dSub").textContent = "주문번호 " + oid;
+  $("dLbl").textContent = "결제된 금액"; $("dAmt").textContent = "확인 중…";
+  $("dBank").hidden = true; $("dCard").hidden = true; $("dPaid").hidden = false;
+  show("sDone");
+  try{ const j = await api("payreturn", { o: oid }); $("dAmt").textContent = j.ok ? won(Number(j.total)||0) : "-"; }
+  catch(e){ $("dAmt").textContent = "-"; }
+})();
+</script>
+</body>
+</html>
