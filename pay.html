@@ -103,6 +103,27 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 .overlay .box{background:#fff;border-radius:14px;padding:22px 26px;font-weight:700;}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13.5px;display:none;z-index:60;}
 [hidden]{display:none!important;}
+.addcard{border:1.5px dashed var(--accent);}
+.addcard .sec{color:var(--accent-dark);}
+.res{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.resbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;font-size:14px;}
+.resbtn.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.resbtn:disabled{opacity:.45;cursor:not-allowed;}
+.resbtn .rc{font-size:12px;color:var(--accent-dark);font-weight:700;}
+.resbtn .rn{font-weight:700;word-break:keep-all;}
+.resbtn .rp{font-weight:800;color:var(--accent-dark);white-space:nowrap;}
+.picker{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chips button{background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:7px 13px;font-size:14px;font-weight:600;cursor:pointer;}
+.chips button.on{border-color:var(--accent);background:var(--soft);color:var(--accent-dark);font-weight:800;}
+.chips button:disabled{opacity:.35;text-decoration:line-through;cursor:not-allowed;}
+.qtyrow{display:flex;align-items:center;gap:0;}
+.qtyrow button{width:42px;height:40px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer;}
+.qtyrow button:first-child{border-radius:10px 0 0 10px;} .qtyrow button:last-child{border-radius:0 10px 10px 0;}
+.qtyrow span{width:52px;height:40px;line-height:38px;text-align:center;font-weight:800;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+.man{display:flex;gap:10px;align-items:flex-start;background:#FFFBF2;border:1px solid #EBD9B4;border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.man .del{flex:none;background:none;border:none;color:var(--sub);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:2px 0;}
+.badge.직접추가{background:#F3E6CC;color:#7A5E12;}
 :focus-visible{outline:3px solid #E2CFA8;outline-offset:2px;}
 </style>
 </head>
@@ -126,6 +147,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div style="margin-top:14px;"><button class="btn btn-primary" id="goSearch">🔍 내 주문 찾기</button></div>
       <p class="hint">'주문완료' 안내를 들으신 뒤 1~2분쯤 지나면 목록에 올라와요. 한참 지나도 안 보이면 채널 또는 유튜브 댓글로 닉네임을 남겨주세요.</p>
       <div class="nicklist" id="nicks"></div>
+      <button class="btn" id="goManual" style="margin-top:14px;background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);font-size:14.5px;padding:12px;">📝 내 주문이 안 보여요 · 직접 담아서 주문하기</button>
       <p class="hint" id="nickWarn" hidden style="color:var(--danger);font-weight:700;">⚠️ 비슷한 닉네임이 여러 개 있어요. 띄어쓰기·숫자·특수문자까지 <u>내 닉네임과 똑같은지</u> 꼭 확인하고 눌러주세요.</p>
     </div>
 
@@ -150,7 +172,25 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div class="notice" style="border-color:#E7C8C0;background:#FBF3F1;color:var(--danger);">👀 <b id="nickChk"></b> 님이 맞나요? 비슷한 닉네임의 다른 분 주문일 수 있어요. 상품 목록이 내가 주문한 것과 다르면 '‹ 닉네임 다시 찾기'를 눌러주세요.</div>
       <div class="notice">✔ 체크된 상품이 이번에 결제할 상품이에요.<br>이미 결제하셨거나 입금 확인 중인 상품은 흐리게 보여요.</div>
       <div id="items"></div>
+      <div id="manList"></div>
       <p class="count" id="count"></p>
+    </div>
+
+    <div class="card addcard">
+      <div class="sec">➕ 빠진 상품 직접 담기</div>
+      <p class="hint" style="margin:-4px 0 10px;">댓글로 주문했는데 위 목록에 없으면 여기서 담아주세요. 방송에서 부른 <b>상품코드</b>나 <b>상품명</b>으로 찾을 수 있어요.</p>
+      <div class="line2"><input type="text" id="aq" placeholder="예) C70  또는  트위드" autocomplete="off" enterkeyhint="search">
+        <button class="btn-sm" id="aGo" style="padding:0 16px">찾기</button></div>
+      <div class="res" id="aRes"></div>
+      <div class="picker" id="aPick" hidden>
+        <div style="font-weight:800" id="pName"></div>
+        <div style="color:var(--accent-dark);font-weight:800;margin-top:2px" id="pPrice"></div>
+        <div id="pColorWrap"><label class="fld">색상</label><div class="chips" id="pColors"></div></div>
+        <div id="pSizeWrap"><label class="fld">사이즈</label><div class="chips" id="pSizes"></div></div>
+        <label class="fld">수량</label>
+        <div class="qtyrow"><button id="qM">−</button><span id="pQty">1</span><button id="qP">＋</button></div>
+        <button class="btn btn-primary" id="aAdd" style="margin-top:14px;">담기</button>
+      </div>
     </div>
 
     <div class="card" id="shipCard">
@@ -246,6 +286,8 @@ const won = n => Number(n||0).toLocaleString("ko-KR") + "원";
 const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const SAVE_KEY = "lumie_customer", PENDING_KEY = "lumie_cmt_pending", NICK_KEY = "lumie_cmt_nick";
 let DATA = null, SHIP = "normal", PAY = "계좌이체", sending = false, curOid = "";
+const MAN_KEY = "lumie_cmt_manual";
+let MAN = [], CAT = null, CUR = null, PC = "", PS = "", PQ = 1;   // 직접 담은 상품 / 방송상품 목록 / 고르는 중인 상품
 
 function dim(on, t){ $("dimT").textContent = t || "불러오는 중입니다…"; $("dim").classList.toggle("show", on); }
 function toast(m){ const t=$("toast"); t.textContent=m; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",1800); }
@@ -272,7 +314,7 @@ async function search(){
     const list = (j.ok && j.nicks) || [];
     $("nicks").innerHTML = list.length
       ? list.map(n => `<button class="nickbtn" data-n="${esc(n)}">${esc(n)}<span>이 닉네임이 저예요 ›</span></button>`).join("")
-      : `<p class="empty">'${esc(q)}'(으)로 찾은 댓글주문이 아직 없어요.<br>글자 수를 줄이거나 잠시 뒤 다시 찾아보세요.</p>`;
+      : `<p class="empty">'${esc(q)}'(으)로 찾은 댓글주문이 아직 없어요.<br>글자 수를 줄이거나 잠시 뒤 다시 찾아보세요.<br>그래도 없으면 아래 <b>직접 담아서 주문하기</b>를 눌러주세요.</p>`;
     $("nickWarn").hidden = list.length < 2;
   }catch(e){ $("nicks").innerHTML = `<p class="empty">연결이 잠깐 불안정해요. 다시 한 번 눌러주세요.</p>`; }
   dim(false);
@@ -295,6 +337,14 @@ async function openNick(nick){
   dim(false);
 }
 $("back").onclick = () => show("sSearch");
+$("goManual").onclick = () => {
+  const q = $("q").value.trim();
+  if(!q){ alert("먼저 위 칸에 댓글에 쓴 닉네임을 정확히 넣어주세요."); $("q").focus(); return; }
+  if(!confirm(`닉네임 '${q}' 맞나요?\n\n띄어쓰기·숫자·특수문자까지 댓글 닉네임과 똑같이 써주세요.\n(입금자명도 이 닉네임으로 해주세요)`)) return;
+  DATA = { ok:true, nick:q, items:[], orderedToday:false, manualOnly:true };
+  try{ localStorage.setItem(NICK_KEY, q); }catch(e){}
+  render(); show("sOrder"); setTimeout(()=>$("aq").focus(), 200);
+};
 $("reload").onclick = () => DATA && openNick(DATA.nick);
 
 const SELECTABLE = s => s==="미결제" || s==="카드결제대기";
@@ -315,10 +365,10 @@ function render(){
         ${opt ? `<div class="op">${esc(opt)}</div>` : ""}
         <div class="row"><span>${won(it.price)} · ${it.qty}개</span><span class="amt">${won(it.price*it.qty)}</span></div>
       </div></label>`;
-  }).join("") : `<p class="empty">지금 결제할 댓글주문이 없어요.</p>`;
+  }).join("") : `<p class="empty">${DATA.manualOnly ? "아래에서 주문하신 상품을 직접 담아주세요." : "매니저가 넣은 댓글주문이 아직 없어요.<br>빠진 상품은 아래에서 직접 담을 수 있어요."}</p>`;
 
-  const anySel = items.some(it => SELECTABLE(it.status));
-  $("shipCard").hidden = !anySel; $("payCard").hidden = !anySel;
+  loadMan();
+  renderMan();
   SHIP = DATA.orderedToday ? "addl" : "normal";
   loadSaved();
   calc();
@@ -328,6 +378,114 @@ document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { SHIP = b.
 document.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { PAY = b.dataset.p; calc(); });
 $("agree").onchange = calc;
 
+/* ---------- 직접 담은 상품 ---------- */
+function loadMan(){
+  MAN = [];
+  try{ const d = JSON.parse(localStorage.getItem(MAN_KEY) || "null"); if(d && d.nick === DATA.nick && Array.isArray(d.items)) MAN = d.items; }catch(e){}
+}
+function saveMan(){ try{ MAN.length ? localStorage.setItem(MAN_KEY, JSON.stringify({ nick: DATA.nick, items: MAN })) : localStorage.removeItem(MAN_KEY); }catch(e){} }
+function manOpt(m){ return [m.color, m.size].filter(Boolean).join(" / "); }
+function manText(m){ return "[직접추가] " + (m.code ? m.code + " " : "") + m.name + (manOpt(m) ? "(" + manOpt(m).replace(/ \/ /g,"/") + ")" : "") + "x" + m.qty; }
+function renderMan(){
+  $("manList").innerHTML = MAN.map((m,i) => `<div class="man">
+      <div class="ob">
+        ${m.code ? `<div class="code">${esc(m.code)}</div>` : ""}
+        <div class="nm">${esc(m.name)}<span class="badge 직접추가">직접 담음</span></div>
+        ${manOpt(m) ? `<div class="op">${esc(manOpt(m))}</div>` : ""}
+        <div class="row"><span>${won(m.price)} · ${m.qty}개</span><span class="amt">${won(m.price*m.qty)}</span></div>
+      </div>
+      <button class="del" data-del="${i}">빼기</button></div>`).join("");
+  const any = DATA.items.some(it => SELECTABLE(it.status)) || MAN.length > 0;
+  $("shipCard").hidden = !any; $("payCard").hidden = !any;
+  calc();
+}
+$("manList").addEventListener("click", e => {
+  const b = e.target.closest("[data-del]"); if(!b) return;
+  const m = MAN[+b.dataset.del];
+  if(!confirm(m.name + " 을(를) 뺄까요?")) return;
+  MAN.splice(+b.dataset.del, 1); saveMan(); renderMan();
+});
+
+/* ---------- 방송 상품 찾기 (댓글상품 탭) ---------- */
+function splitList(v){ return (Array.isArray(v) ? v : String(v||"").split(/[,\n]/)).map(x => String(x).trim()).filter(Boolean); }
+async function loadCat(){
+  if(CAT) return CAT;
+  const j = await api("cmtcat");
+  if(!j.ok) throw new Error(j.msg || "상품 목록 오류");
+  const map = {}, list = [];
+  (j.rows || []).forEach(r => {
+    const code = String(r.code||"").trim(), name = String(r.name||"").trim();
+    if(!name && !code) return;
+    const k = code + "|" + name;
+    let p = map[k];
+    if(!p){ p = map[k] = { code, name, price: Number(r.price)||0, combos: [] }; list.push(p); }
+    if(!p.price && Number(r.price)) p.price = Number(r.price);
+    const cs = splitList(r.color), ss = splitList(r.sizes);
+    const out = !!r.soldout || (r.stock !== null && r.stock !== undefined && r.stock !== "" && Number(r.stock) <= 0);
+    (cs.length ? cs : [""]).forEach(c => (ss.length ? ss : [""]).forEach(z => p.combos.push({ c, z, out })));
+  });
+  list.forEach(p => {
+    p.colors = [...new Set(p.combos.map(x=>x.c))].filter(Boolean);
+    p.sizes  = [...new Set(p.combos.map(x=>x.z))].filter(Boolean);
+    p.allOut = p.combos.length > 0 && p.combos.every(x=>x.out);
+  });
+  CAT = list; return CAT;
+}
+const nz = s => String(s||"").toLowerCase().replace(/\s+/g,"").replace(/번$/,"");
+async function aSearch(){
+  const q = nz($("aq").value);
+  if(!q){ $("aq").focus(); return; }
+  dim(true, "상품 찾는 중…");
+  try{ await loadCat(); }catch(e){ dim(false); $("aRes").innerHTML = `<p class="empty">상품 목록을 못 불러왔어요. 다시 눌러주세요.</p>`; return; }
+  dim(false);
+  const exact = CAT.filter(p => nz(p.code) === q);
+  const hits = exact.length ? exact : CAT.filter(p => nz(p.code).startsWith(q) || nz(p.name).includes(q)).slice(0, 20);
+  $("aPick").hidden = true; CUR = null;
+  $("aRes").innerHTML = hits.length ? hits.map(p => {
+    const i = CAT.indexOf(p), dis = p.allOut || !p.price;
+    return `<button class="resbtn" data-p="${i}" ${dis?"disabled":""}><span><span class="rc">${esc(p.code)}</span><br><span class="rn">${esc(p.name)}</span></span>
+      <span class="rp">${p.allOut ? "품절" : p.price ? won(p.price) : "가격 문의"}</span></button>`;
+  }).join("") : `<p class="empty">'${esc($("aq").value.trim())}'(으)로 찾은 상품이 없어요.<br>코드(예: C70)나 상품명 일부로 다시 찾아보세요.</p>`;
+  if(hits.length === 1 && !hits[0].allOut && hits[0].price) pickProd(CAT.indexOf(hits[0]));
+}
+$("aGo").onclick = aSearch;
+$("aq").addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing) aSearch(); });
+$("aRes").addEventListener("click", e => { const b = e.target.closest(".resbtn"); if(b && !b.disabled) pickProd(+b.dataset.p); });
+function comboOut(c, z){ const m = CUR.combos.filter(x => (!c||x.c===c) && (!z||x.z===z)); return !m.length || m.every(x=>x.out); }
+function pickProd(i){
+  CUR = CAT[i]; PC = CUR.colors.length === 1 ? CUR.colors[0] : ""; PS = CUR.sizes.length === 1 ? CUR.sizes[0] : ""; PQ = 1;
+  document.querySelectorAll(".resbtn").forEach(b => b.classList.toggle("on", +b.dataset.p === i));
+  $("pName").textContent = (CUR.code ? CUR.code + " · " : "") + CUR.name;
+  $("pPrice").textContent = won(CUR.price);
+  drawPick(); $("aPick").hidden = false;
+  $("aPick").scrollIntoView({ behavior:"smooth", block:"nearest" });
+}
+function drawPick(){
+  $("pColorWrap").hidden = !CUR.colors.length; $("pSizeWrap").hidden = !CUR.sizes.length;
+  $("pColors").innerHTML = CUR.colors.map(c => `<button data-c="${esc(c)}" class="${c===PC?"on":""}" ${comboOut(c,"")?"disabled":""}>${esc(c)}</button>`).join("");
+  $("pSizes").innerHTML = CUR.sizes.map(z => `<button data-z="${esc(z)}" class="${z===PS?"on":""}" ${comboOut(PC,z)?"disabled":""}>${esc(z)}</button>`).join("");
+  $("pQty").textContent = PQ;
+}
+$("pColors").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if(!b) return; PC = b.dataset.c; if(PS && comboOut(PC,PS)) PS = ""; drawPick(); });
+$("pSizes").addEventListener("click", e => { const b = e.target.closest("[data-z]"); if(!b) return; PS = b.dataset.z; drawPick(); });
+$("qM").onclick = () => { PQ = Math.max(1, PQ-1); drawPick(); };
+$("qP").onclick = () => { PQ = Math.min(20, PQ+1); drawPick(); };
+$("aAdd").onclick = () => {
+  if(!CUR) return;
+  if(CUR.colors.length && !PC){ alert("색상을 골라주세요."); return; }
+  if(CUR.sizes.length && !PS){ alert("사이즈를 골라주세요."); return; }
+  const opt = [PC, PS].filter(Boolean).join(" / ");
+  const dup = DATA.items.some(it => SELECTABLE(it.status) && (String(it.code||"") === CUR.code || it.name === CUR.name) && (!PC || !it.color || it.color === PC));
+  if(dup && !confirm("위 목록에 같은 상품이 이미 있어요.\n따로 한 장 더 주문하신 게 맞나요?\n(같은 상품이면 '취소'를 눌러주세요)")) return;
+  if(!confirm(`${CUR.code} ${CUR.name}${opt ? "\n" + opt : ""}\n${won(CUR.price)} × ${PQ}개\n\n이대로 담을까요?`)) return;
+  const same = MAN.find(m => m.code===CUR.code && m.name===CUR.name && m.color===PC && m.size===PS);
+  if(same) same.qty += PQ; else MAN.push({ code: CUR.code, name: CUR.name, color: PC, size: PS, price: CUR.price, qty: PQ });
+  saveMan(); renderMan();
+  $("aPick").hidden = true; $("aRes").innerHTML = ""; $("aq").value = ""; CUR = null;
+  toast("담았어요! 위 목록에서 확인해주세요");
+  $("manList").scrollIntoView({ behavior:"smooth", block:"center" });
+};
+
 function picked(){ return [...document.querySelectorAll("#items .chk:checked")].map(c => DATA.items[c.dataset.i]); }
 function goodsOf(list){ return list.reduce((s,it)=>s+it.price*it.qty, 0); }
 function isFree(goods){ return goods >= CONFIG.FREE_SHIP_MIN; }
@@ -336,9 +494,9 @@ function vatOf(goods){ return PAY==="카드" ? Math.round(goods*CONFIG.CARD_VAT_
 
 function calc(){
   if(!DATA) return;
-  const sel = picked(), goods = goodsOf(sel), qty = sel.reduce((s,it)=>s+it.qty,0);
-  const total = DATA.items.length;
-  $("count").textContent = total ? `${sel.length}개 상품 · 수량 ${qty}개 결제 예정` : "";
+  const sel = picked(), goods = goodsOf(sel) + goodsOf(MAN), qty = sel.reduce((s,it)=>s+it.qty,0) + MAN.reduce((s,m)=>s+m.qty,0);
+  const nSel = sel.length + MAN.length;
+  $("count").textContent = nSel ? `${nSel}개 상품 · 수량 ${qty}개 결제 예정` : "";
   const free = isFree(goods);
   document.querySelectorAll("[data-s]").forEach(b => { b.classList.toggle("on", !free && b.dataset.s===SHIP); b.disabled = free; });
   document.querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p===PAY));
@@ -351,8 +509,8 @@ function calc(){
   $("sTotLbl").textContent = PAY==="카드" ? "결제하실 금액" : "입금하실 금액";
   $("sTot").textContent = won(goods + ship + vat);
   const btn = $("submit");
-  btn.disabled = !sel.length || !$("agree").checked;
-  btn.textContent = !sel.length ? "결제할 상품을 골라주세요" : !$("agree").checked ? "위 동의에 체크해주세요"
+  btn.disabled = !nSel || !$("agree").checked;
+  btn.textContent = !nSel ? "결제할 상품을 골라주세요" : !$("agree").checked ? "위 동의에 체크해주세요"
     : PAY==="카드" ? `💳 ${won(goods+ship+vat)} 카드결제 하러 가기` : `${won(goods+ship)} 입금 주문 넣기`;
 }
 
@@ -403,26 +561,28 @@ function makeOid(){
 }
 $("submit").onclick = async () => {
   if(sending) return;
-  const sel = picked(); if(!sel.length) return;
+  const sel = picked(); if(!sel.length && !MAN.length) return;
   const need = [["cName","수령인"],["cPhone","연락처"],["cAddr","주소"]];
   for(const [id,l] of need){ if(!$(id).value.trim()){ alert(l + "을(를) 입력해 주세요."); (id==="cAddr" ? $("findAddr") : $(id)).focus(); return; } }
   const phoneD = $("cPhone").value.replace(/[^0-9]/g,"");
   if(phoneD.length < 10){ alert("연락처를 확인해 주세요."); $("cPhone").focus(); return; }
   if(PAY==="카드" && !/^01[016789]\d{7,8}$/.test(phoneD)){ alert("카드결제는 휴대폰 번호가 필요해요."); $("cPhone").focus(); return; }
-  if(SHIP==="addl" && !DATA.orderedToday && !isFree(goodsOf(sel)) &&
+  if(SHIP==="addl" && !DATA.orderedToday && !isFree(goodsOf(sel) + goodsOf(MAN)) &&
      !confirm("'오늘 합배송(배송비 0원)'을 고르셨어요.\n오늘 먼저 결제한 주문이 있을 때만 해당돼요.\n\n이대로 진행할까요?")) return;
 
-  const goods = goodsOf(sel), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
+  const goods = goodsOf(sel) + goodsOf(MAN), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
   if(PAY==="카드" && total < 1000){ alert("카드결제는 1,000원 이상부터 가능해요."); return; }
-  if(!confirm(`상품 ${sel.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
+  if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
 
   sending = true; dim(true, "주문 넣는 중…");
   curOid = makeOid();
   try{
     // 1) 고른 상품에 주문번호 찍기 (서버가 금액·주문내역을 다시 계산)
-    const c = await api("cmtclaim", { nick: DATA.nick, oid: curOid, ids: sel.map(it=>it.id).join(",") });
+    //    (직접 담은 상품만 있으면 건너뜀)
+    const c = sel.length ? await api("cmtclaim", { nick: DATA.nick, oid: curOid, ids: sel.map(it=>it.id).join(",") })
+                         : { ok: true, goods: 0, items: "", replace: "" };
     if(!c.ok){ dim(false); sending = false; alert(c.msg || "주문 접수에 실패했어요."); openNick(DATA.nick); return; }
-    if(Number(c.goods) !== goods){ dim(false); sending = false; alert("상품 금액이 바뀌었어요. 새로 불러올게요."); openNick(DATA.nick); return; }
+    if(Number(c.goods) !== goodsOf(sel)){ dim(false); sending = false; alert("상품 금액이 바뀌었어요. 새로 불러올게요."); openNick(DATA.nick); return; }
     const addl = ship === 0 && SHIP === "addl" && !isFree(goods);
 
     // 2) 기존 주문 접수 (주문접수 탭)
@@ -430,13 +590,15 @@ $("submit").onclick = async () => {
       time: new Date().toLocaleString("ko-KR"),
       nick: DATA.nick, name: $("cName").value.trim(), phone: $("cPhone").value.trim(),
       zip: $("cZip").value.trim(), addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
-      memo: $("cMemo").value.trim(), req: ("[댓글주문] " + $("cReq").value.trim()).trim(),
-      items: c.items + (addl ? " [추가주문]" : ""),
+      memo: $("cMemo").value.trim(),
+      req: ("[댓글주문]" + (MAN.length ? "[직접추가 확인필요]" : "") + " " + $("cReq").value.trim()).trim(),
+      items: [c.items, ...MAN.map(manText)].filter(Boolean).join(", ") + (addl ? " [추가주문]" : ""),
       goods, ship, vat, total, agree: CONFIG.AGREE, pay: PAY, oid: curOid,
       replace: c.replace || "", cat: CONFIG.CAT,
     };
     await fetch(CONFIG.SHEET_URL, { method:"POST", mode:"no-cors", headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(order) });
     saveCustomer();
+    MAN = []; saveMan();
     try{ localStorage.setItem("lumie_last_order", todayStr()); }catch(e){}
     doneScreen(total);
   }catch(e){
