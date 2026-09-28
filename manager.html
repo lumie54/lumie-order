@@ -617,8 +617,12 @@ function ytParse(text){
   const list = (col && col.sizes.length ? col.sizes : p.sizes);
   if(list.length <= 1) out.size = list[0] || "FREE";
   else {
-    const U = codeCut.replace(/프리/g, "FREE");
-    const got = list.filter(z => {
+    const U = codeCut.replace(/프리/g, "FREE").replace(/\d+\s*(개|장|벌|켤레|세트)/g, " ").replace(/[X×*]\s*\d+/g, " ");
+    // 1) 사이즈 글자 통째로 맞는 것 우선 (2XL 이 XL 로도 잡히지 않게)
+    const whole = list.filter(z => new RegExp("(^|[^0-9A-Z])" + reEsc(String(z).toUpperCase()) + "(?![0-9A-Z])").test(U));
+    const wbest = whole.length ? Math.max(...whole.map(z => String(z).length)) : 0;
+    const wpick = whole.filter(z => String(z).length === wbest);
+    const got = wpick.length === 1 ? wpick : list.filter(z => {
       const toks = String(z).toUpperCase().match(/[A-Z]+|\d+/g) || [];
       return toks.some(t => new RegExp((/^\d+$/.test(t) ? "(^|[^0-9])" : "(^|[^A-Z])") + reEsc(t) + (/^\d+$/.test(t) ? "(?![0-9])" : "(?![A-Z])")).test(U));
     });
