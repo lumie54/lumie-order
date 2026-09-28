@@ -534,6 +534,14 @@ $("qAdd").onclick = () => qAddProd(false);
 /* ================= 유튜브 라이브 댓글 ================= */
 const YT_POLL_ON = 8000, YT_POLL_OFF = 30000;
 let YT = [], ytSince = 0, ytState = {}, ytPendingRow = 0, ytTimer = null, ytFirst = true;
+// 창을 최소화하거나 다른 창에 가려져도 8초 간격 유지 (브라우저는 숨은 창의 타이머를 1분까지 늦춤 → 워커 타이머는 안 늦춤)
+const ytSchedule = (() => {
+  try{
+    const w = new Worker(URL.createObjectURL(new Blob(["let t;onmessage=e=>{clearTimeout(t);t=setTimeout(()=>postMessage(0),e.data)}"], { type:"text/javascript" })));
+    w.onmessage = () => ytPoll();
+    return ms => w.postMessage(ms);
+  }catch(e){ return ms => { clearTimeout(ytTimer); ytTimer = setTimeout(ytPoll, ms); }; }
+})();
 
 const YT_ALIAS = {
   "블랙":["검정","검은","검정색","블렉","black"], "화이트":["흰","흰색","하양","white"], "아이보리":["아이","ivory"],
@@ -668,7 +676,7 @@ async function ytPoll(){
       ytAutoRun();
     } else if(j.msg){ $("ytMsg").textContent = j.msg; $("ytMsg").style.display = "block"; }
   }catch(e){}
-  ytTimer = setTimeout(ytPoll, ytState.on ? YT_POLL_ON : YT_POLL_OFF);
+  ytSchedule(ytState.on ? YT_POLL_ON : YT_POLL_OFF);
 }
 
 function ytRender(){
