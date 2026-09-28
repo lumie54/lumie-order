@@ -677,7 +677,8 @@ function ytRender(){
   const html = YT.slice().reverse().map(x => {
     const c = ytParse(x.text);
     x.c = c;
-    const isCand = c.order;
+    const req = c.flags.includes("취소요청") || c.flags.includes("변경요청");   // 취소·변경 댓글은 주문단어 없어도 보여줌
+    const isCand = c.order || req;
     if(isCand && x.st!=="무시") cand++;
     if(x.st==="확정") done++;
     if(!all && (!isCand || x.st==="무시")) return "";
@@ -698,6 +699,9 @@ function ytRender(){
     let ac = "";
     if(x.st==="확정") ac = `<span class="st 결제완료">확정</span>`;
     else if(x.st==="무시") ac = `<button class="mini" data-yu="${x.r}">되돌리기</button>`;
+    else if(req){
+      ac = `<button class="mini ok" data-yfind="${esc(x.nick)}">내역에서 찾기</button><button class="mini" data-yno="${x.r}">처리함</button>`;
+    }
     else if(isCand){
       ac = (c.complete ? `<button class="mini ok" data-yok="${x.r}">확정</button>` : "")
          + `<button class="mini" data-yfill="${x.r}">입력칸으로</button><button class="mini" data-yno="${x.r}">무시</button>`;
@@ -800,6 +804,9 @@ async function ytMarkDone(r, oid){
   ytApi("ylcmark", { r, st:"확정", oid: oid || "-" });
 }
 $("ytFeed").addEventListener("click", async e => {
+  const f = e.target.closest("[data-yfind]");
+  if(f){ $("filter").value = f.dataset.yfind; renderList(); $("filter").scrollIntoView({block:"center"});
+         toast(f.dataset.yfind + "님 주문만 보여요 — 취소할 줄의 [취소] 누르기 (변경이면 취소 후 새로 입력)"); return; }
   const b = e.target.closest("[data-yok],[data-yfill],[data-yno],[data-yu]"); if(!b) return;
   if(b.dataset.yok) return ytConfirm(Number(b.dataset.yok));
   if(b.dataset.yfill) return ytFillAndWait(Number(b.dataset.yfill));
