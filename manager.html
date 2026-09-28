@@ -205,6 +205,7 @@ td.num{text-align:right;white-space:nowrap}
       <input class="in" id="ytUrl" placeholder="방송 주소 (비우면 지금 켜진 내 라이브 자동)">
       <button class="mini" id="ytStart">방송 연결</button>
       <button class="mini" id="ytStop">끊기</button>
+      <label title="다 읽힌 댓글은 매니저 없이 바로 주문으로 넣어요"><input type="checkbox" id="ytAuto"> <b style="color:var(--ok)">자동 확정</b></label>
       <label><input type="checkbox" id="ytAll"> 전체 댓글</label>
     </div>
     <div class="ytmsg" id="ytMsg"></div>
@@ -660,6 +661,7 @@ async function ytPoll(){
       if(YT.length > 1500) YT = YT.slice(-1500);
       ytFirst = false;
       ytRender();
+      ytAutoRun();
     } else if(j.msg){ $("ytMsg").textContent = j.msg; $("ytMsg").style.display = "block"; }
   }catch(e){}
   ytTimer = setTimeout(ytPoll, ytState.on ? YT_POLL_ON : YT_POLL_OFF);
@@ -675,7 +677,8 @@ function ytRender(){
     if(isCand && x.st!=="무시") cand++;
     if(x.st==="확정") done++;
     if(!all && (!isCand || x.st==="무시")) return "";
-    const tags = c.flags.map(f => `<span class="tag${f==="질문?"?"":" red"}">${f}</span>`).join("");
+    const tags = c.flags.map(f => `<span class="tag${f==="질문?"?"":" red"}">${f}</span>`).join("")
+               + (x.auto && !x.st ? `<span class="tag red">자동 안 함: ${esc(x.auto)}</span>` : "");
     let pr = "";
     if(c.p){
       const bits = [label(c.p.code) + " " + c.p.name,
@@ -722,6 +725,49 @@ function ytFill(x){
   $("nick").value = x.nick;
   $("qty").value = c.qty || 1;
   $("memo").value = "";
+}
+
+/* ---------- 자동 확정 (매니저 없을 때) ----------
+ * 다 읽힌 댓글([확정] 버튼 뜨는 것)만 사람 대신 바로 주문 입력. 왼쪽 입력칸은 안 건드림.
+ * 같은 닉네임이 같은 상품·색상·사이즈를 이미 주문했으면 건너뜀 → 매니저가 판단
+ * 재고가 정해진 상품은 남은 수량이 모자라면 건너뜀 */
+let ytAutoBusy = false;
+try{ $("ytAuto").checked = localStorage.getItem("lumie_yt_auto") === "1"; }catch(e){}
+$("ytAuto").onchange = () => {
+  try{ localStorage.setItem("lumie_yt_auto", $("ytAuto").checked ? "1" : "0"); }catch(e){}
+  toast($("ytAuto").checked ? "자동 확정 켜짐 — 다 읽힌 댓글은 바로 주문으로 들어가요" : "자동 확정 꺼짐");
+  ytAutoRun();
+};
+function ytAutoSkip(x, c){
+  const dup = LIST.some(o => o.status!=="취소" && norm(o.nick)===norm(x.nick) && String(o.code)===String(c.p.code)
+                        && String(o.color||"")===String(c.color||"") && norm(o.size)===norm(c.size));
+  if(dup) return "중복?";
+  const col = c.p.colors.find(v => v.name===c.color) || c.p.colors[0];
+  if(col && col.stock!=null && pendingCount(c.p.code, col.name) + c.qty > col.stock && c.p.back!=="미송가능") return "재고 확인";
+  return "";
+}
+async function ytAutoRun(){
+  if(ytAutoBusy || !$("ytAuto").checked || !ytState.on) return;
+  ytAutoBusy = true;
+  try{
+    const todo = YT.filter(x => !x.st && !x.auto).sort((a,b) => a.r - b.r);
+    for(const x of todo){
+      if(!$("ytAuto").checked) break;
+      const c = x.c || ytParse(x.text);
+      if(!c.complete) continue;
+      const why = ytAutoSkip(x, c);
+      if(why){ x.auto = why; continue; }
+      const claim = await ytApi("ylcmark", { r: x.r, st:"확정" });
+      if(!claim.ok){ if(claim.dup) x.st = "확정"; continue; }
+      x.st = "확정";
+      const j = await api("cmtadd", { nick: x.nick, code: c.p.code, name: c.p.name, color: c.color || "", size: c.size,
+                                      qty: c.qty, price: c.price, memo: "[자동] " + x.text });
+      if(!j.ok){ x.st = ""; ytApi("ylcmark", { r: x.r, st:"" }); x.auto = "실패"; continue; }
+      LIST.unshift(j.item);
+      ytApi("ylcmark", { r: x.r, st:"확정", oid: (j.item && j.item.id) || "-" });
+    }
+  }catch(e){}
+  finally{ ytAutoBusy = false; ytRender(); renderList(); renderColors(); }
 }
 
 async function ytConfirm(r){
