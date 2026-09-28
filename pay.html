@@ -197,6 +197,11 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div class="sec">🏠 받으실 곳</div>
       <label class="fld" for="cName">수령인</label>
       <input type="text" id="cName" autocomplete="name">
+      <div id="cusWrap" hidden>
+        <label class="fld" for="cCus">개인통관고유부호 <span class="opt" style="color:var(--danger)">(해외배송 필수)</span></label>
+        <input type="text" id="cCus" placeholder="P로 시작하는 13자리" autocapitalize="characters" autocomplete="off" maxlength="20">
+        <p class="hint">위 <b>수령인 이름</b>과 통관부호 명의가 같아야 통관돼요. 모르시면 관세청 유니패스(unipass.customs.go.kr)에서 바로 조회·발급할 수 있어요.</p>
+      </div>
       <label class="fld" for="cPhone">연락처</label>
       <div class="line2"><input type="tel" id="cPhone" inputmode="tel" placeholder="010-0000-0000" autocomplete="tel">
         <button class="btn-sm" id="loadAddr">지난 배송지</button></div>
@@ -285,6 +290,7 @@ const $ = id => document.getElementById(id);
 const won = n => Number(n||0).toLocaleString("ko-KR") + "원";
 const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const SAVE_KEY = "lumie_customer", PENDING_KEY = "lumie_cmt_pending", NICK_KEY = "lumie_cmt_nick";
+let CUSTOMS = false;   // 해외배송 방송: 시트 르미에 메뉴에서 켜고 끔
 let DATA = null, SHIP = "normal", PAY = "계좌이체", sending = false, curOid = "";
 const MAN_KEY = "lumie_cmt_manual";
 let MAN = [], CAT = null, CUR = null, PC = "", PS = "", PQ = 1;   // 직접 담은 상품 / 방송상품 목록 / 고르는 중인 상품
@@ -520,12 +526,13 @@ function loadSaved(){
     const d = JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); if(!d) return;
     if(!$("cName").value) $("cName").value = d.name||"";
     if(!$("cPhone").value) $("cPhone").value = d.phone||"";
+    if(!$("cCus").value) $("cCus").value = d.cus||"";
     if(!$("cAddr").value){ $("cZip").value = d.zip||""; $("cAddr").value = d.addr||""; $("cAddr2").value = d.addr2||""; }
   }catch(e){}
 }
 function saveCustomer(){
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ nick: DATA.nick, name:$("cName").value, phone:$("cPhone").value,
-    zip:$("cZip").value, addr:$("cAddr").value, addr2:$("cAddr2").value })); }catch(e){}
+    zip:$("cZip").value, addr:$("cAddr").value, addr2:$("cAddr2").value, cus:$("cCus").value })); }catch(e){}
 }
 $("loadAddr").onclick = async () => {
   const phone = $("cPhone").value.replace(/[^0-9]/g,"");
@@ -564,6 +571,11 @@ $("submit").onclick = async () => {
   const sel = picked(); if(!sel.length && !MAN.length) return;
   const need = [["cName","수령인"],["cPhone","연락처"],["cAddr","주소"]];
   for(const [id,l] of need){ if(!$(id).value.trim()){ alert(l + "을(를) 입력해 주세요."); (id==="cAddr" ? $("findAddr") : $(id)).focus(); return; } }
+  let cus = "";
+  if(CUSTOMS){
+    cus = $("cCus").value.replace(/[\s-]/g,"").toUpperCase(); $("cCus").value = cus;
+    if(!/^P\d{12}$/.test(cus)){ alert("개인통관고유부호를 확인해 주세요.\nP로 시작하는 13자리예요. (예: P123456789012)"); $("cCus").focus(); return; }
+  }
   const phoneD = $("cPhone").value.replace(/[^0-9]/g,"");
   if(phoneD.length < 10){ alert("연락처를 확인해 주세요."); $("cPhone").focus(); return; }
   if(PAY==="카드" && !/^01[016789]\d{7,8}$/.test(phoneD)){ alert("카드결제는 휴대폰 번호가 필요해요."); $("cPhone").focus(); return; }
@@ -572,7 +584,7 @@ $("submit").onclick = async () => {
 
   const goods = goodsOf(sel) + goodsOf(MAN), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
   if(PAY==="카드" && total < 1000){ alert("카드결제는 1,000원 이상부터 가능해요."); return; }
-  if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
+  if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}${cus ? " · 통관부호 " + cus : ""}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
 
   sending = true; dim(true, "주문 넣는 중…");
   curOid = makeOid();
@@ -591,7 +603,7 @@ $("submit").onclick = async () => {
       nick: DATA.nick, name: $("cName").value.trim(), phone: $("cPhone").value.trim(),
       zip: $("cZip").value.trim(), addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
       memo: $("cMemo").value.trim(),
-      req: ("[댓글주문]" + (MAN.length ? "[직접추가 확인필요]" : "") + " " + $("cReq").value.trim()).trim(),
+      req: ("[댓글주문]" + (cus ? "[통관 " + cus + "]" : "") + (MAN.length ? "[직접추가 확인필요]" : "") + " " + $("cReq").value.trim()).trim(),
       items: [c.items, ...MAN.map(manText)].filter(Boolean).join(", ") + (addl ? " [추가주문]" : ""),
       goods, ship, vat, total, agree: CONFIG.AGREE, pay: PAY, oid: curOid,
       replace: c.replace || "", cat: CONFIG.CAT,
@@ -647,6 +659,12 @@ $("again").onclick = () => {
   let n = DATA && DATA.nick; try{ n = n || localStorage.getItem(NICK_KEY); }catch(e){}
   n ? openNick(n) : show("sSearch");
 };
+
+/* 해외배송(통관부호) 켜짐 여부 */
+(async function loadCustoms(){
+  try{ const j = await api("ylccfg"); CUSTOMS = !!(j && j.ok && j.customs); }catch(e){ CUSTOMS = false; }
+  $("cusWrap").hidden = !CUSTOMS;
+})();
 
 /* 카드 결제 후 복귀 (?paid=주문번호) */
 (async function checkReturn(){
