@@ -79,6 +79,42 @@ td.num{text-align:right;white-space:nowrap}
 .lock h2{font-size:18px;margin-bottom:14px}
 .lock .in{text-align:center;font-size:20px;letter-spacing:6px;margin-bottom:12px}
 :focus-visible{outline:3px solid #d9c29a;outline-offset:2px}
+.qp summary{cursor:pointer;font-weight:800;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px}
+.qp summary::-webkit-details-marker{display:none}
+.qp summary small{font-weight:600;color:var(--sub);font-size:12px}
+.qp[open] summary{margin-bottom:12px}
+.qp .row3{display:grid;grid-template-columns:90px 1fr 110px;gap:8px;margin-bottom:8px}
+.qp .row2{margin-bottom:8px}
+.qp .add{padding:11px;font-size:15px}
+.qplist{margin-top:10px;font-size:13px;color:var(--sub);max-height:120px;overflow:auto}
+.qplist b{color:var(--ink)}
+.lcol{display:flex;flex-direction:column;gap:20px;min-width:0}
+.rcol{display:flex;flex-direction:column;gap:20px;min-width:0}
+.ytst{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:#f1ece6;color:#9b8f82}
+.ytst.on{background:#fde3df;color:#b3402e}
+.yttools{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.yttools .in{flex:1;min-width:220px;padding:8px 12px}
+.yttools label{font-size:13px;color:var(--sub);display:flex;gap:4px;align-items:center;cursor:pointer}
+.ytmsg{font-size:13px;color:var(--danger);margin-bottom:8px;display:none}
+.feed{max-height:380px;overflow:auto;border-top:1px solid var(--line)}
+.yc{display:flex;gap:10px;padding:9px 4px;border-bottom:1px solid #f0e9df;align-items:flex-start}
+.yc.new{animation:flash 2.4s ease-out}
+@keyframes flash{from{background:#fff4d6}to{background:transparent}}
+.yc .tm{font-size:12px;color:var(--sub);min-width:38px;padding-top:2px}
+.yc .bd{flex:1;min-width:0}
+.yc .tx{word-break:break-all}
+.yc .tx b{margin-right:6px}
+.yc .pr{font-size:13px;margin-top:4px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:4px 8px;display:inline-block}
+.yc .pr.part{background:#fff8e6;border-color:#eedcaa}
+.yc .miss{color:var(--danger);font-weight:700}
+.yc .tag{font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:4px;background:#e6eef8;color:#2d4f7c}
+.yc .tag.red{background:#fde3df;color:#b3402e}
+.yc .ac{display:flex;gap:4px;flex-shrink:0}
+.yc .ok{background:var(--ok);color:#fff;border-color:var(--ok);font-weight:700}
+.yc.done{opacity:.55}
+.yc.done .pr{background:#e3efe4;border-color:#cfe0c6}
+.yc.ign{opacity:.4}
+.yc.none .tx{color:var(--sub)}
 </style>
 </head>
 <body>
@@ -101,6 +137,23 @@ td.num{text-align:right;white-space:nowrap}
 
 <div class="app">
   <!-- 입력 -->
+  <div class="lcol">
+  <details class="panel qp" id="qp">
+    <summary>➕ 방송 중 상품 등록 <small>상품리스트 없는 업체용</small></summary>
+    <div class="row3">
+      <input class="in" id="qCode" placeholder="번호" autocomplete="off">
+      <input class="in" id="qName" placeholder="상품명 (선택)" autocomplete="off">
+      <input class="in" id="qPrice" placeholder="가격" inputmode="numeric" autocomplete="off">
+    </div>
+    <div class="row2">
+      <input class="in" id="qColors" placeholder="색상 (블랙,베이지)" autocomplete="off">
+      <input class="in" id="qSizes" placeholder="사이즈 (비우면 FREE)" autocomplete="off">
+    </div>
+    <button class="add" id="qAdd">상품 등록 (Enter)</button>
+    <p class="hint">등록하면 바로 댓글에서 인식돼요. 등록 전에 달린 댓글도 다시 읽습니다.</p>
+    <div class="qplist" id="qList"></div>
+  </details>
+
   <section class="panel">
     <h2>주문 넣기</h2>
 
@@ -142,6 +195,21 @@ td.num{text-align:right;white-space:nowrap}
     <p class="hint">추가하면 방송 안내 문구가 자동으로 복사돼요. 상품은 그대로 남아서 다음 닉네임만 바로 넣으면 됩니다.</p>
     <div class="last" id="last"><span id="lastTxt"></span><button class="mini" id="lastCopy">다시 복사</button></div>
   </section>
+  </div>
+
+  <div class="rcol">
+  <!-- 유튜브 댓글 -->
+  <section class="panel" id="ytPanel">
+    <h2>📺 유튜브 댓글 <span class="ytst" id="ytSt">연결 안 됨</span> <span class="stats" id="ytStats"></span></h2>
+    <div class="yttools">
+      <input class="in" id="ytUrl" placeholder="방송 주소 (비우면 지금 켜진 내 라이브 자동)">
+      <button class="mini" id="ytStart">방송 연결</button>
+      <button class="mini" id="ytStop">끊기</button>
+      <label><input type="checkbox" id="ytAll"> 전체 댓글</label>
+    </div>
+    <div class="ytmsg" id="ytMsg"></div>
+    <div class="feed" id="ytFeed"><div class="hint" style="padding:18px">방송 시작 후 [방송 연결]을 누르면 '저요 · ㅈㅇ · 주세요 · 주문' 댓글만 주문 후보로 떠요. 상품·색상·사이즈까지 다 읽힌 댓글은 [확정] 한 번이면 주문이 들어갑니다.</div></div>
+  </section>
 
   <!-- 목록 -->
   <section class="panel">
@@ -162,6 +230,7 @@ td.num{text-align:right;white-space:nowrap}
       </table>
     </div>
   </section>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -223,6 +292,7 @@ function init(){
   $("srcSel").onchange = () => { SRC = $("srcSel").value; localStorage.setItem("lumie_cmt_src", SRC); cur = null; $("prod").classList.remove("show"); $("q").value = ""; $("colors").innerHTML = ""; $("sizes").innerHTML = ""; loadCatalog(); };
   loadCatalog(); loadNicks(); loadList();
   setInterval(loadList, CONFIG.REFRESH_MS);
+  ytPoll();
   $("q").focus();
 }
 
@@ -250,6 +320,8 @@ async function loadCatalog(){
     });
     CAT = order.map(k => map[k]);
     toast("상품 " + CAT.length + "개 불러옴");
+    if(typeof ytRender === "function") ytRender();
+    if(typeof qRenderList === "function") qRenderList();
   }catch(e){ toast("상품 목록을 불러오지 못했어요"); }
 }
 $("reloadCat").onclick = loadCatalog;
@@ -341,8 +413,9 @@ $("mPrice").addEventListener("input", () => $("price").value = $("mPrice").value
 
 /* ---------- 주문 추가 ---------- */
 function optText(col, size){ return [col, size && size.toUpperCase()!=="FREE" ? size : ""].filter(Boolean).join(" "); }
+let lastAddedId = "";
 async function addOrder(){
-  if(busy) return;
+  if(busy) return false;
   const manual = $("manual").style.display !== "none";
   const nick = $("nick").value.trim();
   const code = manual ? "" : (cur ? cur.code : "");
@@ -360,8 +433,10 @@ async function addOrder(){
   busy = true; $("addBtn").disabled = true;
   try{
     const j = await api("cmtadd", { nick, code, name, color: col, size, qty, price, memo: $("memo").value.trim() });
-    if(!j.ok){ toast(j.msg || "저장 실패"); return; }
+    if(!j.ok){ toast(j.msg || "저장 실패"); return false; }
     LIST.unshift(j.item); renderList();
+    lastAddedId = (j.item && j.item.id) || "";
+    if(ytPendingRow){ ytMarkDone(ytPendingRow, lastAddedId); ytPendingRow = 0; }
     lastNotice = CONFIG.NOTICE.replace("{nick}", nick).replace("{code}", label(code)).replace("{name}", name)
                    .replace("{opt}", optText(col, size) + (qty>1 ? " " + qty + "개" : "")).replace(/\s+/g," ").trim();
     const ok = await copy(lastNotice);
@@ -374,7 +449,8 @@ async function addOrder(){
     if(!(cur && cur.sizes.length<=1)) $("size").value = "";
     renderColors(); renderSizes();
     $("nick").focus();
-  }catch(e){ toast("서버 연결 실패 — 다시 시도하세요"); }
+    return true;
+  }catch(e){ toast("서버 연결 실패 — 다시 시도하세요"); return false; }
   finally{ busy = false; $("addBtn").disabled = false; }
 }
 $("addBtn").onclick = addOrder;
@@ -420,6 +496,280 @@ $("rows").addEventListener("click", async e => {
   if(!j.ok){ toast(j.msg || "처리 실패"); return; }
   x.status = undo ? "미결제" : "취소"; renderList(); renderColors();
 });
+
+/* ================= 방송 중 상품 등록 ================= */
+let qBusy = false;
+function qRenderList(){
+  const n = CAT.length;
+  $("qList").innerHTML = n ? `등록된 상품 <b>${n}</b>개 · ` + CAT.slice(-8).reverse().map(p => `<b>${esc(label(p.code))}</b> ${esc(won(p.colors[0]?.price))}`).join(" · ") : "아직 등록된 상품이 없어요";
+}
+async function qAddProd(overwrite){
+  if(qBusy) return;
+  const code = $("qCode").value.trim().replace(/번$/, "");
+  const price = $("qPrice").value.replace(/[^0-9]/g, "");
+  if(!code){ toast("번호를 입력하세요"); $("qCode").focus(); return; }
+  if(Number(price) < 100){ toast("가격을 입력하세요"); $("qPrice").focus(); return; }
+  if(SRC !== "cmtcat"){ SRC = "cmtcat"; $("srcSel").value = "cmtcat"; localStorage.setItem("lumie_cmt_src", SRC); }
+  qBusy = true; $("qAdd").disabled = true;
+  try{
+    const j = await api("ylcprod", { code, name: $("qName").value.trim(), price,
+      colors: $("qColors").value.trim(), sizes: $("qSizes").value.trim(), overwrite: overwrite ? 1 : 0 });
+    if(!j.ok){
+      if(j.exists && confirm(j.msg + "\n새로 입력한 내용으로 바꿀까요?")){ qBusy = false; $("qAdd").disabled = false; return qAddProd(true); }
+      if(!j.exists) toast(j.msg || "등록 실패");
+      return;
+    }
+    toast(label(code.toUpperCase()) + (j.replaced ? " 수정됨" : " 등록됨"));
+    ["qCode","qName","qPrice","qColors","qSizes"].forEach(id => $(id).value = "");
+    await loadCatalog();
+    $("qCode").focus();
+  }catch(e){ toast("서버 연결 실패 (YouTubeChat.gs 적용·배포 확인)"); }
+  finally{ qBusy = false; $("qAdd").disabled = false; }
+}
+$("qAdd").onclick = () => qAddProd(false);
+["qCode","qName","qPrice","qColors","qSizes"].forEach(id =>
+  $(id).addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); qAddProd(false); } }));
+
+/* ================= 유튜브 라이브 댓글 ================= */
+const YT_POLL_ON = 8000, YT_POLL_OFF = 30000;
+let YT = [], ytSince = 0, ytState = {}, ytPendingRow = 0, ytTimer = null, ytFirst = true;
+
+const YT_ALIAS = {
+  "블랙":["검정","검은","검정색","블렉","black"], "화이트":["흰","흰색","하양","white"], "아이보리":["아이","ivory"],
+  "네이비":["곤색","navy"], "그레이":["회색","gray","grey"], "차콜":["챠콜","charcoal"], "베이지":["beige"],
+  "브라운":["갈색","brown"], "핑크":["분홍","pink"], "카키":["khaki"], "레드":["빨강","빨간","red"], "블루":["파랑","파란","blue"]
+};
+const YT_ORDER_RE = /저요|저여|ㅈㅇ|주세요|주세여|주문/;
+const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// 댓글 한 줄 → {p, color, size, qty, price, complete, why[], flags[]}
+function ytParse(text){
+  const raw = String(text||"");
+  const T = raw.replace(/([A-Za-z])\s+(\d)/g, "$1$2").toUpperCase();
+  const out = { p:null, color:"", size:"", qty:1, price:0, complete:false, why:[], flags:[] };
+  // 주문 의사 표현이 있는 댓글만 후보 (저요 · ㅈㅇ · 주세요 · 주문)
+  out.order = YT_ORDER_RE.test(raw.replace(/\s+/g, ""));
+  if(/취소/.test(raw)) out.flags.push("취소요청");
+  if(/변경|바꿔|바꾸/.test(raw)) out.flags.push("변경요청");
+  if(/\?|있나요|있어요\?|되나요|될까요|얼마|가능한가|가능할까|문의|어때|몇\s*(키|cm|사이즈)|실측|기장/.test(raw)) out.flags.push("질문?");
+
+  // 1) 상품코드 찾기
+  const hits = [];
+  CAT.forEach(p => {
+    const C = String(p.code||"").trim().toUpperCase(); if(!C) return;
+    const num = /^\d+$/.test(C);
+    const re = new RegExp((num ? "(^|[^0-9])" : "(^|[^A-Z0-9])") + reEsc(C) + "(?![0-9])" + (num ? "" : "(?![A-Z])"), "g");
+    let m; while((m = re.exec(T))){ const pos = m.index + m[1].length;
+      hits.push({ p, pos, len:C.length, num, bun: /^\s*번/.test(T.slice(pos + C.length)) }); }
+  });
+  // 숫자만 있는 코드는 "44번" 이거나 댓글 맨 앞에 올 때만 믿음 (끝에 붙은 "55" 는 사이즈일 수 있음)
+  const lead = T.search(/\S/);
+  let pick = hits.filter(h => !h.num || h.bun || h.pos === lead);
+  const weak = !pick.length && hits.length;
+  if(pick.some(h => !h.num)) pick = pick.filter(h => !h.num);          // 영문 섞인 코드 우선
+  else if(pick.some(h => h.bun)) pick = pick.filter(h => h.bun);       // "44번" 우선
+  if(pick.length){
+    const first = Math.min(...pick.map(h => h.pos));
+    pick = pick.filter(h => h.pos === first);
+    const best = Math.max(...pick.map(h => h.len));
+    pick = pick.filter(h => h.len === best);
+  }
+  const prods = [...new Set(pick.map(h => h.p))];
+  let codeCut = T;
+  if(prods.length === 1){
+    out.p = prods[0];
+    const h = pick[0]; codeCut = T.slice(0, h.pos) + " ".repeat(h.len) + T.slice(h.pos + h.len);
+  } else if(prods.length > 1){
+    out.why.push("같은 번호 " + prods.length + "개"); out.cands = prods; return out;
+  } else {
+    // 코드가 없으면 상품명으로 (부분 결과만)
+    const n = norm(raw);
+    const byName = CAT.filter(p => p.name && norm(p.name).length >= 3 && n.includes(norm(p.name)));
+    if(byName.length === 1){ out.p = byName[0]; out.why.push("상품명으로 찾음"); }
+    else if(weak){ out.p = hits[0].p; out.why.push("번호 확인"); }
+    else { out.why.push("상품 못 찾음"); return out; }
+  }
+  const p = out.p;
+
+  // 2) 색상
+  const cols = p.colors.filter(c => c.name);
+  const n = norm(raw);
+  if(cols.length === 1) out.color = cols[0].name;
+  else if(cols.length > 1){
+    let found = [];
+    const scan = useAlias => cols.forEach(c => {
+      const words = [c.name];
+      if(useAlias) Object.keys(YT_ALIAS).forEach(k => { if(c.name.includes(k)) YT_ALIAS[k].forEach(a => words.push(c.name.replace(k, a))); });
+      words.forEach(w => { if(w && n.includes(norm(w))) found.push({ c, len: norm(w).length }); });
+    });
+    scan(false); if(!found.length) scan(true);
+    if(found.length){
+      const best = Math.max(...found.map(f => f.len));
+      const names = [...new Set(found.filter(f => f.len === best).map(f => f.c.name))];
+      if(names.length === 1) out.color = names[0]; else out.why.push("색상 여러 개");
+    } else out.why.push("색상?");
+  }
+  const col = cols.find(c => c.name === out.color);
+  if(col && (col.soldout || (col.stock!=null && col.stock<=0 && p.back!=="미송가능"))) out.flags.push("품절");
+
+  // 3) 사이즈
+  const list = (col && col.sizes.length ? col.sizes : p.sizes);
+  if(list.length <= 1) out.size = list[0] || "FREE";
+  else {
+    const U = codeCut.replace(/프리/g, "FREE");
+    const got = list.filter(z => {
+      const toks = String(z).toUpperCase().match(/[A-Z]+|\d+/g) || [];
+      return toks.some(t => new RegExp((/^\d+$/.test(t) ? "(^|[^0-9])" : "(^|[^A-Z])") + reEsc(t) + (/^\d+$/.test(t) ? "(?![0-9])" : "(?![A-Z])")).test(U));
+    });
+    if(got.length === 1) out.size = got[0];
+    else out.why.push(got.length ? "사이즈 여러 개" : "사이즈?");
+  }
+
+  // 4) 수량
+  const q = raw.match(/(\d+)\s*(개|장|벌|켤레|세트)/) || raw.match(/[xX×*]\s*(\d+)/);
+  if(q){ const v = parseInt(q[1],10); if(v>=1 && v<=20) out.qty = v; }
+
+  out.price = (col && col.price) || (p.colors[0] && p.colors[0].price) || 0;
+  out.complete = !!(out.order && out.p && (!cols.length || out.color) && out.size && !out.why.length
+                    && !out.flags.length);
+  return out;
+}
+
+async function ytApi(mode, params){ return api(mode, params); }
+
+function ytSetState(st){
+  ytState = st || {};
+  const el = $("ytSt");
+  if(ytState.on){ el.textContent = "● 수집 중" + (ytState.title ? " · " + ytState.title.slice(0,24) : ""); el.className = "ytst on"; }
+  else { el.textContent = ytState.ended ? "방송 종료됨" : "연결 안 됨"; el.className = "ytst"; }
+  const m = $("ytMsg");
+  if(ytState.err && ytState.on){ m.textContent = "유튜브 오류: " + ytState.err; m.style.display = "block"; }
+  else m.style.display = "none";
+}
+
+async function ytPoll(){
+  clearTimeout(ytTimer);
+  try{
+    const j = await ytApi("ylcpoll", { since: ytSince });
+    if(j.ok){
+      ytSetState(j.state);
+      const fresh = [];
+      (j.rows||[]).forEach(x => { if(!YT.some(y => y.r===x.r)){ x.isNew = !ytFirst; YT.push(x); fresh.push(x); } });
+      Object.keys(j.marks||{}).forEach(r => { const y = YT.find(v => v.r===Number(r)); if(y) y.st = j.marks[r]; });
+      if(j.last) ytSince = Math.max(ytSince, j.last);
+      if(YT.length > 1500) YT = YT.slice(-1500);
+      ytFirst = false;
+      ytRender();
+    } else if(j.msg){ $("ytMsg").textContent = j.msg; $("ytMsg").style.display = "block"; }
+  }catch(e){}
+  ytTimer = setTimeout(ytPoll, ytState.on ? YT_POLL_ON : YT_POLL_OFF);
+}
+
+function ytRender(){
+  const all = $("ytAll").checked;
+  let cand = 0, done = 0;
+  const html = YT.slice().reverse().map(x => {
+    const c = ytParse(x.text);
+    x.c = c;
+    const isCand = c.order;
+    if(isCand && x.st!=="무시") cand++;
+    if(x.st==="확정") done++;
+    if(!all && (!isCand || x.st==="무시")) return "";
+    const tags = c.flags.map(f => `<span class="tag${f==="질문?"?"":" red"}">${f}</span>`).join("");
+    let pr = "";
+    if(c.p){
+      const bits = [label(c.p.code) + " " + c.p.name,
+        c.p.colors.some(v=>v.name) ? (c.color || `<span class="miss">색상?</span>`) : "",
+        c.size ? (c.size.toUpperCase()==="FREE" ? "FREE" : c.size) : `<span class="miss">사이즈?</span>`,
+        c.qty + "개", won(c.price * c.qty)].filter(Boolean);
+      pr = `<div class="pr${c.complete?"":" part"}">${bits.map((b,i)=> i<1 ? esc(b) : (b.startsWith("<span")?b:esc(b))).join(" · ")}</div>`;
+    } else if(c.cands){
+      pr = `<div class="pr part"><span class="miss">같은 번호 ${c.cands.length}개</span> — ${c.cands.map(p=>esc(p.name)).join(" / ")}</div>`;
+    } else if(isCand){
+      pr = `<div class="pr part"><span class="miss">상품 못 찾음</span></div>`;
+    }
+    let ac = "";
+    if(x.st==="확정") ac = `<span class="st 결제완료">확정</span>`;
+    else if(x.st==="무시") ac = `<button class="mini" data-yu="${x.r}">되돌리기</button>`;
+    else if(isCand){
+      ac = (c.complete ? `<button class="mini ok" data-yok="${x.r}">확정</button>` : "")
+         + `<button class="mini" data-yfill="${x.r}">입력칸으로</button><button class="mini" data-yno="${x.r}">무시</button>`;
+    }
+    const cls = x.st==="확정" ? "done" : x.st==="무시" ? "ign" : (isCand ? "" : "none");
+    return `<div class="yc ${cls}${x.isNew?" new":""}"><div class="tm">${esc(String(x.time).slice(11,16))}</div>
+      <div class="bd"><div class="tx"><b>${esc(x.nick)}</b>${esc(x.text)}${tags}</div>${pr}</div><div class="ac">${ac}</div></div>`;
+  }).join("");
+  YT.forEach(x => x.isNew = false);
+  const feed = $("ytFeed"), keep = feed.scrollTop;
+  if(YT.length) feed.innerHTML = html || `<div class="hint" style="padding:18px">주문 후보 댓글이 아직 없어요 (전체 댓글 ${YT.length}개)</div>`;
+  feed.scrollTop = keep;
+  $("ytStats").innerHTML = YT.length ? `댓글 <b>${YT.length}</b> · 후보 <b>${cand}</b> · 확정 <b>${done}</b>` : "";
+}
+$("ytAll").onchange = ytRender;
+
+function ytFill(x){
+  const c = x.c || ytParse(x.text);
+  if(c.p){
+    choose(c.p);
+    color = c.color || "";
+    const col = c.p.colors.find(v => v.name===color);
+    $("price").value = (col && col.price) || c.price || "";
+    if(c.size) $("size").value = c.size;
+    renderColors(); renderSizes();
+  } else {
+    $("q").value = c.cands ? String(c.cands[0].code) : ""; search();
+  }
+  $("nick").value = x.nick;
+  $("qty").value = c.qty || 1;
+  $("memo").value = "";
+}
+
+async function ytConfirm(r){
+  const x = YT.find(v => v.r===r); if(!x || busy) return;
+  const c = x.c || ytParse(x.text);
+  if(!c.complete){ ytFillAndWait(r); return; }
+  const claim = await ytApi("ylcmark", { r, st:"확정" });
+  if(!claim.ok){ toast(claim.msg || "처리 실패"); if(claim.dup){ x.st = "확정"; ytRender(); } return; }
+  x.st = "확정"; ytRender();
+  ytFill(x);
+  ytPendingRow = 0;
+  const ok = await addOrder();
+  if(!ok){ x.st = ""; ytRender(); ytApi("ylcmark", { r, st:"" }); return; }
+  ytApi("ylcmark", { r, st:"확정", oid: lastAddedId });
+}
+function ytFillAndWait(r){
+  const x = YT.find(v => v.r===r); if(!x) return;
+  ytPendingRow = r;
+  ytFill(x);
+  toast("입력칸에 채웠어요 — 확인 후 [주문 추가]");
+  const c = x.c;
+  (!c.p ? $("q") : (c.p.colors.some(v=>v.name) && !color) ? $("colors") : !$("size").value ? $("size") : $("addBtn")).focus();
+}
+async function ytMarkDone(r, oid){
+  const x = YT.find(v => v.r===r); if(x){ x.st = "확정"; ytRender(); }
+  ytApi("ylcmark", { r, st:"확정", oid: oid || "-" });
+}
+$("ytFeed").addEventListener("click", async e => {
+  const b = e.target.closest("[data-yok],[data-yfill],[data-yno],[data-yu]"); if(!b) return;
+  if(b.dataset.yok) return ytConfirm(Number(b.dataset.yok));
+  if(b.dataset.yfill) return ytFillAndWait(Number(b.dataset.yfill));
+  const r = Number(b.dataset.yno || b.dataset.yu), st = b.dataset.yno ? "무시" : "";
+  const x = YT.find(v => v.r===r); if(x){ x.st = st; ytRender(); }
+  const j = await ytApi("ylcmark", { r, st }); if(!j.ok) toast(j.msg || "처리 실패");
+});
+$("ytStart").onclick = async () => {
+  $("ytStart").disabled = true; $("ytMsg").style.display = "none";
+  try{
+    const j = await ytApi("ylcstart", { url: $("ytUrl").value.trim() });
+    if(!j.ok){ $("ytMsg").textContent = j.msg || "연결 실패"; $("ytMsg").style.display = "block"; return; }
+    YT = []; ytSince = 0; ytFirst = true; ytSetState(j.state); ytRender(); toast("방송 연결됨 — 댓글 수집 시작"); ytPoll();
+  }catch(e){ $("ytMsg").textContent = "서버 연결 실패 (YouTubeChat.gs 적용·배포 확인)"; $("ytMsg").style.display = "block"; }
+  finally{ $("ytStart").disabled = false; }
+};
+$("ytStop").onclick = async () => {
+  if(!confirm("댓글 수집을 멈출까요? (수집된 댓글은 그대로 남아요)")) return;
+  const j = await ytApi("ylcstop"); if(j.ok) ytSetState(j.state);
+};
 </script>
 </body>
 </html>
