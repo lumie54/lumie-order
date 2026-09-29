@@ -548,7 +548,8 @@ const YT_ALIAS = {
   "네이비":["곤색","navy"], "그레이":["회색","gray","grey"], "차콜":["챠콜","charcoal"], "베이지":["beige"],
   "브라운":["갈색","brown"], "핑크":["분홍","pink"], "카키":["khaki"], "레드":["빨강","빨간","red"], "블루":["파랑","파란","blue"]
 };
-const YT_ORDER_RE = /저요|저여|ㅈㅇ|주세요|주세여|주문/;
+// 주문 단어 (9/29 방송에서 "주세용" "할께용" 이 빠져서 넓힘)
+const YT_ORDER_RE = /저요|저여|저욤|저용|ㅈㅇ|주세|줘요|줘여|주문|할게|할께|살게|살께|구매|구입|찜/;
 const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // 댓글 한 줄 → {p, color, size, qty, price, complete, why[], flags[]}
@@ -560,7 +561,7 @@ function ytParse(text){
   out.order = YT_ORDER_RE.test(raw.replace(/\s+/g, ""));
   if(/취소/.test(raw)) out.flags.push("취소요청");
   if(/변경|바꿔|바꾸/.test(raw)) out.flags.push("변경요청");
-  if(/\?|있나요|있어요\?|되나요|될까요|얼마|가능한가|가능할까|문의|어때|몇\s*(키|cm|사이즈)|실측|기장/.test(raw)) out.flags.push("질문?");
+  if(/\?|있나요|있어요\?|되나요|될까요|얼마|가능한가|가능할까|문의|어때|몇\s*(키|cm|사이즈)|실측|기장|보여|알려|말해|입어|착용|착장|가격|맞죠|맞져|맞나|맞지|괜찮|추천|해도|탐나|이뻐|이뿌|예뻐/.test(raw)) out.flags.push("질문?");
 
   // 1) 상품코드 찾기
   const hits = [];
@@ -652,6 +653,9 @@ function ytParse(text){
   if(q){ const v = parseInt(q[1],10); if(v>=1 && v<=20) out.qty = v; }
 
   out.price = (col && col.price) || (p.colors[0] && p.colors[0].price) || 0;
+  // 주문 단어는 없지만 번호·색상·사이즈가 다 있는 댓글 ("41번 화이트 3사이즈") → 후보로 보여주고 사람이 확정 (자동 확정 X)
+  out.maybe = !!(!out.order && out.p && (!cols.length || out.color) && out.size && !out.why.length && !out.flags.length
+                 && (cols.length <= 1 || !!out.color) && (list.length <= 1 || !!out.size) && (cols.length > 1 || list.length > 1));
   out.complete = !!(out.order && out.p && (!cols.length || out.color) && out.size && !out.why.length
                     && !out.flags.length);
   return out;
@@ -695,12 +699,13 @@ function ytRender(){
     const c = ytParse(x.text);
     x.c = c;
     const req = c.flags.includes("취소요청") || c.flags.includes("변경요청");   // 취소·변경 댓글은 주문단어 없어도 보여줌
-    const isCand = c.order || req;
+    const isCand = c.order || req || c.maybe;
     if(isCand && x.st!=="무시") cand++;
     if(x.st==="확정") done++;
     if(!all && (!isCand || x.st==="무시")) return "";
     const tags = c.flags.map(f => `<span class="tag${f==="질문?"?"":" red"}">${f}</span>`).join("")
-               + (x.auto && !x.st ? `<span class="tag red">자동 안 함: ${esc(x.auto)}</span>` : "");
+               + (x.auto && !x.st ? `<span class="tag red">자동 안 함: ${esc(x.auto)}</span>` : "")
+               + (c.maybe && !x.st ? `<span class="tag">주문? 확인 후 확정</span>` : "");
     let pr = "";
     if(c.p){
       const bits = [label(c.p.code) + " " + c.p.name,
@@ -720,7 +725,7 @@ function ytRender(){
       ac = `<button class="mini ok" data-yfind="${esc(x.nick)}">내역에서 찾기</button><button class="mini" data-yno="${x.r}">처리함</button>`;
     }
     else if(isCand){
-      ac = (c.complete ? `<button class="mini ok" data-yok="${x.r}">확정</button>` : "")
+      ac = ((c.complete || c.maybe) ? `<button class="mini ok" data-yok="${x.r}">확정</button>` : "")
          + `<button class="mini" data-yfill="${x.r}">입력칸으로</button><button class="mini" data-yno="${x.r}">무시</button>`;
     }
     const cls = x.st==="확정" ? "done" : x.st==="무시" ? "ign" : (isCand ? "" : "none");
@@ -798,7 +803,7 @@ async function ytAutoRun(){
 async function ytConfirm(r){
   const x = YT.find(v => v.r===r); if(!x || busy) return;
   const c = x.c || ytParse(x.text);
-  if(!c.complete){ ytFillAndWait(r); return; }
+  if(!c.complete && !c.maybe){ ytFillAndWait(r); return; }
   const claim = await ytApi("ylcmark", { r, st:"확정" });
   if(!claim.ok){ toast(claim.msg || "처리 실패"); if(claim.dup){ x.st = "확정"; ytRender(); } return; }
   x.st = "확정"; ytRender();
