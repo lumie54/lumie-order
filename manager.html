@@ -600,10 +600,19 @@ function ytParse(text){
   }
   const p = out.p;
 
+  const n0 = norm(raw);
   // 2) 색상
   const cols = p.colors.filter(c => c.name);
   const n = norm(raw);
-  if(cols.length === 1) out.color = cols[0].name;
+  if(cols.length === 1){
+    out.color = cols[0].name;
+    // 색상이 하나뿐인데 댓글에 다른 색 이름이 있으면 (지운 색상 등) 자동 확정 안 함
+    const mine = [cols[0].name]; Object.keys(YT_ALIAS).forEach(k => { if(cols[0].name.includes(k)) YT_ALIAS[k].forEach(a => mine.push(a)); });
+    const words = new Set(); CAT.forEach(q => q.colors.forEach(c => c.name && words.add(c.name)));
+    Object.keys(YT_ALIAS).forEach(k => { words.add(k); YT_ALIAS[k].forEach(a => { if(a.length >= 2) words.add(a); }); });
+    const other = [...words].find(w => n0.includes(norm(w)) && !mine.some(m => norm(m).includes(norm(w))));
+    if(other) out.why.push("색상 다름: " + other);
+  }
   else if(cols.length > 1){
     let found = [];
     const scan = useAlias => cols.forEach(c => {
