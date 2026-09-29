@@ -170,6 +170,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
     <div class="card">
       <div class="sec" id="oHead"></div>
       <div class="notice" style="border-color:#E7C8C0;background:#FBF3F1;color:var(--danger);">👀 <b id="nickChk"></b> 님이 맞나요? 비슷한 닉네임의 다른 분 주문일 수 있어요. 상품 목록이 내가 주문한 것과 다르면 '‹ 닉네임 다시 찾기'를 눌러주세요.</div>
+      <div class="notice" id="intlNote" hidden style="border-color:#C9D8EA;background:#F1F6FB;color:#2d4f7c;">✈️ <b>오늘은 해외배송 상품</b>이라 받아보시기까지 <b>약 2주</b> 걸려요.<br>오늘 주문은 <b>모두 무료배송</b>이에요.</div>
       <div class="notice">✔ 체크된 상품이 이번에 결제할 상품이에요.<br>이미 결제하셨거나 입금 확인 중인 상품은 흐리게 보여요.</div>
       <div id="items"></div>
       <div id="manList"></div>
@@ -494,7 +495,7 @@ $("aAdd").onclick = () => {
 
 function picked(){ return [...document.querySelectorAll("#items .chk:checked")].map(c => DATA.items[c.dataset.i]); }
 function goodsOf(list){ return list.reduce((s,it)=>s+it.price*it.qty, 0); }
-function isFree(goods){ return goods >= CONFIG.FREE_SHIP_MIN; }
+function isFree(goods){ return CUSTOMS || goods >= CONFIG.FREE_SHIP_MIN; }   // 해외배송 방송 날은 전부 무료배송
 function shipFee(goods){ if(!goods) return 0; if(isFree(goods)) return 0; return CONFIG.SHIP[SHIP] || 0; }
 function vatOf(goods){ return PAY==="카드" ? Math.round(goods*CONFIG.CARD_VAT_RATE) : 0; }
 
@@ -506,7 +507,8 @@ function calc(){
   const free = isFree(goods);
   document.querySelectorAll("[data-s]").forEach(b => { b.classList.toggle("on", !free && b.dataset.s===SHIP); b.disabled = free; });
   document.querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p===PAY));
-  $("shipMsg").textContent = free ? `🎉 ${won(CONFIG.FREE_SHIP_MIN)} 넘어서 배송비는 저희가 낼게요!`
+  $("shipMsg").textContent = CUSTOMS ? "🎉 오늘은 모든 주문 무료배송이에요! (해외배송 · 약 2주 소요)"
+    : free ? `🎉 ${won(CONFIG.FREE_SHIP_MIN)} 넘어서 배송비는 저희가 낼게요!`
     : SHIP==="addl" ? (DATA.orderedToday ? "오늘 먼저 결제하신 주문이 있어서 같이 묶어 보내드려요." : "오늘 이미 결제한 주문이 있을 때만 골라주세요.")
     : `상품 금액이 ${won(CONFIG.FREE_SHIP_MIN)} 이상이면 배송비가 없어요.`;
   const ship = shipFee(goods), vat = vatOf(goods);
@@ -586,7 +588,7 @@ $("submit").onclick = async () => {
 
   const goods = goodsOf(sel) + goodsOf(MAN), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
   if(PAY==="카드" && total < 1000){ alert("카드결제는 1,000원 이상부터 가능해요."); return; }
-  if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}${cus ? " · 통관부호 " + cus : ""}\n${$("cAddr").value} ${$("cAddr2").value}\n\n이 주소로 보내드릴까요?`)) return;
+  if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}${cus ? " · 통관부호 " + cus : ""}\n${$("cAddr").value} ${$("cAddr2").value}${CUSTOMS ? "\n✈️ 해외배송이라 약 2주 걸려요." : ""}\n\n이 주소로 보내드릴까요?`)) return;
 
   sending = true; dim(true, "주문 넣는 중…");
   curOid = makeOid();
@@ -666,6 +668,8 @@ $("again").onclick = () => {
 (async function loadCustoms(){
   try{ const j = await api("ylccfg"); CUSTOMS = !!(j && j.ok && j.customs); }catch(e){ CUSTOMS = false; }
   $("cusWrap").hidden = !CUSTOMS;
+  $("intlNote").hidden = !CUSTOMS;
+  calc();
 })();
 
 /* 카드 결제 후 복귀 (?paid=주문번호) */
