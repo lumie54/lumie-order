@@ -548,6 +548,20 @@ const YT_ALIAS = {
   "네이비":["곤색","navy"], "그레이":["회색","gray","grey"], "차콜":["챠콜","charcoal"], "베이지":["beige"],
   "브라운":["갈색","brown"], "핑크":["분홍","pink"], "카키":["khaki"], "레드":["빨강","빨간","red"], "블루":["파랑","파란","blue"]
 };
+// 같은 계열 색 — 상품에 그 색이 없으면 같은 계열 색 하나로 넣음 (예: 블랙/아이보리 상품에 "화이트" → 아이보리)
+const YT_FAMILY = [
+  ["화이트","아이보리","크림","오프화이트","흰","흰색","하양","white","ivory","cream"],
+  ["블랙","검정","검은","검정색","블렉","black"],
+  ["베이지","연베이지","샌드","beige"],
+  ["핑크","연핑크","분홍","인디핑크","pink"],
+  ["블루","스카이블루","하늘","하늘색","소라","blue"],
+  ["그레이","연그레이","회색","멜란지","gray","grey"],
+  ["브라운","카멜","갈색","모카","brown","camel"],
+  ["카키","올리브","khaki"],
+  ["네이비","곤색","남색","navy"],
+];
+const ytFam = w => { const x = norm(w); return YT_FAMILY.findIndex(f => f.some(v => { const y = norm(v); return y === x || (y.length >= 2 && x.includes(y)); })); };
+
 // 주문 단어 (9/29 방송에서 "주세용" "할께용" 이 빠져서 넓힘)
 const YT_ORDER_RE = /저요|저여|저욤|저용|ㅈㅇ|주세|줘요|줘여|주문|할게|할께|살게|살께|구매|구입|찜/;
 const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -609,6 +623,7 @@ function ytParse(text){
     out.color = cols[0].name;
     // 색상이 하나뿐인데 댓글에 다른 색 이름이 있으면 (지운 색상 등) 자동 확정 안 함
     const mine = [cols[0].name]; Object.keys(YT_ALIAS).forEach(k => { if(cols[0].name.includes(k)) YT_ALIAS[k].forEach(a => mine.push(a)); });
+    const mf = ytFam(cols[0].name); if(mf > -1) YT_FAMILY[mf].forEach(a => mine.push(a));
     const words = new Set(); CAT.forEach(q => q.colors.forEach(c => c.name && words.add(c.name)));
     Object.keys(YT_ALIAS).forEach(k => { words.add(k); YT_ALIAS[k].forEach(a => { if(a.length >= 2) words.add(a); }); });
     const other = [...words].find(w => n0.includes(norm(w)) && !mine.some(m => norm(m).includes(norm(w))));
@@ -622,6 +637,10 @@ function ytParse(text){
       words.forEach(w => { if(w && n.includes(norm(w))) found.push({ c, len: norm(w).length }); });
     });
     scan(false); if(!found.length) scan(true);
+    if(!found.length){   // 같은 계열 색으로 (블랙/아이보리 상품에 "화이트" → 아이보리)
+      const said = YT_FAMILY.findIndex(f => f.some(v => norm(v).length >= 1 && n.includes(norm(v))));
+      if(said > -1){ const same = cols.filter(c => ytFam(c.name) === said); if(same.length === 1) found.push({ c: same[0], len: 1 }); }
+    }
     if(found.length){
       const best = Math.max(...found.map(f => f.len));
       const names = [...new Set(found.filter(f => f.len === best).map(f => f.c.name))];
