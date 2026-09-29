@@ -573,7 +573,9 @@ $("submit").onclick = async () => {
   for(const [id,l] of need){ if(!$(id).value.trim()){ alert(l + "을(를) 입력해 주세요."); (id==="cAddr" ? $("findAddr") : $(id)).focus(); return; } }
   let cus = "";
   if(CUSTOMS){
-    cus = $("cCus").value.replace(/[\s-]/g,"").toUpperCase(); $("cCus").value = cus;
+    cus = $("cCus").value.replace(/[\s-]/g,"").toUpperCase();
+    if(/^\d{12}$/.test(cus)) cus = "P" + cus;   // P 빼고 숫자 12자리만 써도 통과
+    $("cCus").value = cus;
     if(!/^P\d{12}$/.test(cus)){ alert("개인통관고유부호를 확인해 주세요.\nP로 시작하는 13자리예요. (예: P123456789012)"); $("cCus").focus(); return; }
   }
   const phoneD = $("cPhone").value.replace(/[^0-9]/g,"");
