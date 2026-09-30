@@ -398,14 +398,16 @@ function renderSearch(){
 
 async function call(params){
   if(!pin()){ toast("비밀번호를 먼저 저장하세요", true); $("pinCard").style.display = "block"; return null; }
-  if(busy) return null;
+  if(busy){ toast("⏳ 앞 작업 처리 중이에요. 2~3초 뒤 다시 눌러주세요", true); return null; }
   busy = true;
+  toast("⏳ 처리 중…");
   try{
     const qs = Object.keys(params).map(k => k + "=" + encodeURIComponent(params[k])).join("&");
     const res = await fetch(CONFIG.SHEET_URL + "?mode=mnctl&pin=" + encodeURIComponent(pin()) + "&" + qs + "&t=" + Date.now());
     const j = await res.json();
     if(!j.ok){ toast(j.msg || "실패", true); return null; }
-    lastRaw = ""; lastLive = ""; await load();
+    // 전체 상품 재로딩 없이 방송 목록만 바로 갱신 (응답 대기 시간 절반으로)
+    lastLive = ""; loadLive().catch(e => console.error(e));
     return j;
   }catch(e){ console.error(e); toast("통신 실패 — 다시 시도", true); return null; }
   finally{ busy = false; }
@@ -415,7 +417,13 @@ async function push(no){
   const name = ($("nm"+no) ? $("nm"+no).value : "").trim();
   const price = ($("pr"+no) ? $("pr"+no).value : "").replace(/[^0-9]/g, "");
   const r = await call({ action: "push", no: no, name: name, price: price });
-  if(r){ toast(no + "번 띄웠습니다 ✓"); $("q").value = ""; renderSearch(); window.scrollTo({top:0, behavior:"smooth"}); }
+  if(r){
+    const p = BYNO[no] || {};
+    LIVE = [{ seq: (LIVE[0] ? LIVE[0].seq + 1 : 1), no: no, name: name || p.name, price: Number(price) || p.price, ts: "" }]
+           .concat(LIVE.filter(l => l.no !== no));
+    renderLive();
+    toast(no + "번 띄웠습니다 ✓"); $("q").value = ""; renderSearch(); window.scrollTo({top:0, behavior:"smooth"});
+  }
 }
 async function remove(no){
   if(!confirm(no + "번 " + (BYNO[no] ? BYNO[no].name : "") + " 을(를) 목록에서 내릴까요?")) return;
