@@ -663,7 +663,8 @@ function ytParse(text){
     // 한글 사이즈 표기 → 영문 (엑스스몰·스몰·미듐·라지·엑스라지·투엑스라지, 단독 에스·엠·엘)
     const XX = list.some(z => /XXL/i.test(String(z))) ? "XXL" : "2XL";
     const KS = codeCut
-      .replace(/(투|2|더블)\s*(엑스|X)\s*라지|엑스엑스\s*라지/g, " " + XX + " ")
+      .replace(/(쓰리|3)\s*(엑스\s*라지|엑라|엑스엘)/g, " 3XL ")
+      .replace(/(투|2|더블)\s*(엑스\s*라지|엑라|엑스엘|X\s*라지)|엑스엑스\s*라지|엑엑라/g, " " + XX + " ")
       .replace(/엑스\s*라지|엑라|엑스엘/g, " XL ")
       .replace(/엑스\s*스몰|엑스\s*에스|엑스몰/g, " XS ")
       .replace(/스몰/g, " S ")
