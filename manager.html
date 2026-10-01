@@ -818,6 +818,54 @@ function ytAutoSkip(x, c){
   if(col && col.stock!=null && pendingCount(c.p.code, col.name) + c.qty > col.stock && c.p.back!=="미송가능") return "재고 확인";
   return "";
 }
+// ★ 변경·취소 댓글 자동 처리 (매니저 없는 방송용, 자동 확정 켜졌을 때)
+//   같은 닉네임 + 같은 번호의 '미결제' 주문이 딱 1개일 때만. 결제중·입금대기·결제완료는 안 건드림
+//   "11번 미듐으로 변경" → 색상은 그대로, 사이즈만 / "11번 화이트에서 블랙으로" → '에서' 앞 단어는 무시
+//   "11번 취소요" → 그 주문 취소. 실패하거나 애매하면 "자동 안 함: 이유" 로 남김 (원래처럼 손으로)
+async function ytAutoChange(x){
+  const raw = String(x.text || "");
+  if(/\?|되나요|될까요|가능한가|가능할까|있나요/.test(raw)) return "질문?";
+  const isCancel = /취소/.test(raw) && !/변경|바꿔|바꾸/.test(raw);
+  const c = ytParse(raw.replace(/[가-힣A-Za-z0-9()]+\s*(에서|말고|대신)/g, " "));
+  if(!c.p) return "상품 못 찾음";
+  const mine = LIST.filter(o => o.status === "미결제" && norm(o.nick) === norm(x.nick) && String(o.code) === String(c.p.code));
+  if(mine.length !== 1){
+    const paid = LIST.some(o => o.status !== "취소" && o.status !== "미결제" && norm(o.nick) === norm(x.nick) && String(o.code) === String(c.p.code));
+    return mine.length ? "같은 상품 주문 " + mine.length + "개" : paid ? "이미 결제 진행" : "바꿀 주문 없음";
+  }
+  const o = mine[0];
+  let add = null;
+  if(!isCancel){
+    if(c.why.some(w => /여러 개/.test(w))) return "확인 필요";
+    const newColor = c.color || o.color || "", newSize = c.size || o.size || "";
+    const col = c.p.colors.find(v => v.name === newColor) || (!c.p.colors.some(v => v.name) ? c.p.colors[0] : null);
+    if(!col) return "색상 확인";
+    const sizes = (col.sizes && col.sizes.length) ? col.sizes : c.p.sizes;
+    if(sizes.length > 1 && !sizes.some(z => norm(z) === norm(newSize))) return "사이즈 확인";
+    if(String(newColor) === String(o.color || "") && norm(newSize) === norm(o.size)) return "변경 없음";
+    add = { nick: o.nick, code: o.code, name: o.name, color: newColor, size: newSize, qty: o.qty,
+            price: col.price || o.price, memo: "[자동변경] " + raw + " (이전: " + optText(o.color, o.size) + ")" };
+  }
+  const claim = await ytApi("ylcmark", { r: x.r, st:"확정" });
+  if(!claim.ok){ if(claim.dup) x.st = "확정"; return ""; }
+  x.st = "확정";
+  const cj = await api("cmtcancel", { id: o.id, undo: 0 });
+  if(!cj.ok){ x.st = ""; ytApi("ylcmark", { r: x.r, st:"" }); return "취소 실패"; }
+  o.status = "취소";
+  if(add){
+    const aj = await api("cmtadd", add);
+    if(!aj.ok){   // 새 주문이 안 들어가면 원래 주문 되살림
+      await api("cmtcancel", { id: o.id, undo: 1 }); o.status = "미결제";
+      x.st = ""; ytApi("ylcmark", { r: x.r, st:"" }); return "변경 실패";
+    }
+    LIST.unshift(aj.item);
+    ytApi("ylcmark", { r: x.r, st:"확정", oid: (aj.item && aj.item.id) || "-" });
+  } else {
+    ytApi("ylcmark", { r: x.r, st:"확정", oid: o.id });
+  }
+  return "";
+}
+
 async function ytAutoRun(){
   if(ytAutoBusy || !$("ytAuto").checked || !ytState.on) return;
   ytAutoBusy = true;
@@ -826,6 +874,9 @@ async function ytAutoRun(){
     for(const x of todo){
       if(!$("ytAuto").checked) break;
       const c = x.c || ytParse(x.text);
+      if(c.p && (c.flags.includes("변경요청") || c.flags.includes("취소요청"))){   // 변경·취소 댓글 자동 처리
+        x.auto = (await ytAutoChange(x)) || ""; continue;
+      }
       if(!(c.complete || (c.maybe && $("ytLoose").checked))) continue;   // 단어 없이도: 번호·색상·사이즈 다 맞는 댓글도 자동
       const why = ytAutoSkip(x, c);
       if(why){ x.auto = why; continue; }
