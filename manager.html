@@ -642,6 +642,11 @@ function ytParse(text){
       const said = YT_FAMILY.findIndex(f => f.some(v => norm(v).length >= 1 && n.includes(norm(v))));
       if(said > -1){ const same = cols.filter(c => ytFam(c.name) === said); if(same.length === 1) found.push({ c: same[0], len: 1 }); }
     }
+    if(!found.length){   // 색상 이름 일부만 쓴 경우 ("차콜" → 차콜그레이), 딱 하나만 맞을 때만
+      const toks = raw.split(/[\s,.\/]+/).map(norm).filter(w => w.length >= 2 && !/^\d/.test(w));
+      const part = cols.filter(c => toks.some(w => norm(c.name).includes(w)));
+      if(part.length === 1) found.push({ c: part[0], len: 1 });
+    }
     if(found.length){
       const best = Math.max(...found.map(f => f.len));
       const names = [...new Set(found.filter(f => f.len === best).map(f => f.c.name))];
