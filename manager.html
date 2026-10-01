@@ -670,7 +670,7 @@ function ytParse(text){
       .replace(/스몰/g, " S ")
       .replace(/미\s*(듐|디움|디엄|디윰|듐|딤)|미디/g, " M ")
       .replace(/라지/g, " L ")
-      .replace(/(^|[^가-힣])(에스|엠|엘)(?=사이즈|싸이즈|[^가-힣]|$)/g, (m0, p, k) => p + " " + ({ "에스":"S", "엠":"M", "엘":"L" })[k] + " ");
+      .replace(/(^|[^가-힣])(에스|엠|엘)(?=사이즈|싸이즈|으로|로|요|이요|이랑|저|주|[^가-힣]|$)/g, (m0, p, k) => p + " " + ({ "에스":"S", "엠":"M", "엘":"L" })[k] + " ");
     const U = KS.replace(/프리/g, "FREE").replace(/\d+\s*(개|장|벌|켤레|세트)/g, " ").replace(/[X×*]\s*\d+/g, " ");
     // 1) 사이즈 글자 통째로 맞는 것 우선 (2XL 이 XL 로도 잡히지 않게)
     const whole = list.filter(z => new RegExp("(^|[^0-9A-Z])" + reEsc(String(z).toUpperCase()) + "(?![0-9A-Z])").test(U));
@@ -837,6 +837,9 @@ async function ytAutoChange(x){
   let add = null;
   if(!isCancel){
     if(c.why.some(w => /여러 개/.test(w))) return "확인 필요";
+    // 사이즈를 말했는데 그 색상에 없는 사이즈면 (핑크엔 M 없음) 바꾸지 않음
+    const saidSize = /(^|[^A-Za-z])(X{0,3}S|M|X{0,3}L|\dXL|FREE|F)(?![A-Za-z])|44|55|66|77|88|스몰|미듐|미디|라지|엑스|엑라|에스|엠|엘|프리/i.test(raw);
+    if(saidSize && !c.size) return "사이즈 확인";
     const newColor = c.color || o.color || "", newSize = c.size || o.size || "";
     const col = c.p.colors.find(v => v.name === newColor) || (!c.p.colors.some(v => v.name) ? c.p.colors[0] : null);
     if(!col) return "색상 확인";
