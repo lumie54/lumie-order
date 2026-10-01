@@ -660,7 +660,17 @@ function ytParse(text){
   const list = (col && col.sizes.length ? col.sizes : p.sizes);
   if(list.length <= 1) out.size = list[0] || "FREE";
   else {
-    const U = codeCut.replace(/프리/g, "FREE").replace(/\d+\s*(개|장|벌|켤레|세트)/g, " ").replace(/[X×*]\s*\d+/g, " ");
+    // 한글 사이즈 표기 → 영문 (엑스스몰·스몰·미듐·라지·엑스라지·투엑스라지, 단독 에스·엠·엘)
+    const XX = list.some(z => /XXL/i.test(String(z))) ? "XXL" : "2XL";
+    const KS = codeCut
+      .replace(/(투|2|더블)\s*(엑스|X)\s*라지|엑스엑스\s*라지/g, " " + XX + " ")
+      .replace(/엑스\s*라지|엑라|엑스엘/g, " XL ")
+      .replace(/엑스\s*스몰|엑스\s*에스|엑스몰/g, " XS ")
+      .replace(/스몰/g, " S ")
+      .replace(/미\s*(듐|디움|디엄|디윰|듐|딤)|미디/g, " M ")
+      .replace(/라지/g, " L ")
+      .replace(/(^|[^가-힣])(에스|엠|엘)(?=사이즈|싸이즈|[^가-힣]|$)/g, (m0, p, k) => p + " " + ({ "에스":"S", "엠":"M", "엘":"L" })[k] + " ");
+    const U = KS.replace(/프리/g, "FREE").replace(/\d+\s*(개|장|벌|켤레|세트)/g, " ").replace(/[X×*]\s*\d+/g, " ");
     // 1) 사이즈 글자 통째로 맞는 것 우선 (2XL 이 XL 로도 잡히지 않게)
     const whole = list.filter(z => new RegExp("(^|[^0-9A-Z])" + reEsc(String(z).toUpperCase()) + "(?![0-9A-Z])").test(U));
     const wbest = whole.length ? Math.max(...whole.map(z => String(z).length)) : 0;
