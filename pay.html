@@ -171,6 +171,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div class="sec" id="oHead"></div>
       <div class="notice" style="border-color:#E7C8C0;background:#FBF3F1;color:var(--danger);">👀 <b id="nickChk"></b> 님이 맞나요? 비슷한 닉네임의 다른 분 주문일 수 있어요. 상품 목록이 내가 주문한 것과 다르면 '‹ 닉네임 다시 찾기'를 눌러주세요.</div>
       <div class="notice" id="intlNote" hidden style="border-color:#C9D8EA;background:#F1F6FB;color:#2d4f7c;">✈️ <b>오늘은 해외배송 상품</b>이라 받아보시기까지 <b>약 2주</b> 걸려요.<br>오늘 주문은 <b>모두 무료배송</b>이에요.</div>
+      <div class="notice" id="domNote" style="border-color:#D6E4CF;background:#F3F8EF;color:#3d5a2c;">🚚 오늘 주문은 <b>다음 주에 바로 출고</b>돼요.</div>
       <div class="notice">✔ 체크된 상품이 이번에 결제할 상품이에요.<br>이미 결제하셨거나 입금 확인 중인 상품은 흐리게 보여요.</div>
       <div id="items"></div>
       <div id="manList"></div>
@@ -669,6 +670,7 @@ $("again").onclick = () => {
   try{ const j = await api("ylccfg"); CUSTOMS = !!(j && j.ok && j.customs); }catch(e){ CUSTOMS = false; }
   $("cusWrap").hidden = !CUSTOMS;
   $("intlNote").hidden = !CUSTOMS;
+  $("domNote").hidden = CUSTOMS;
   calc();
 })();
 
