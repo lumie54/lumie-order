@@ -575,7 +575,8 @@ function ytParse(text){
   // 주문 의사 표현이 있는 댓글만 후보 (저요 · ㅈㅇ · 주세요 · 주문)
   out.order = YT_ORDER_RE.test(raw.replace(/\s+/g, ""));
   if(/취소/.test(raw)) out.flags.push("취소요청");
-  if(/변경|바꿔|바꾸/.test(raw)) out.flags.push("변경요청");
+  // 변경: "바꿀게요·교환·말고" + "~로 할게요/주세요" (로=바꾸기, 도=추가)
+  if(/변경|바꿔|바꾸|바꿀|바꿈|바꿨|교환|말고|대신|(으로|[가-힣A-Za-z0-9)]로)\s*(할게|할께|할래|해주|해줘|해요|주세|줘요|줘여|갈게|갈께|살게|살께|부탁)/.test(raw)) out.flags.push("변경요청");
   if(/\?|있나요|있어요\?|되나요|될까요|얼마|가능한가|가능할까|문의|어때|몇\s*(키|cm|사이즈)|실측|기장|보여|알려|말해|입어|착용|착장|가격|맞죠|맞져|맞나|맞지|괜찮|추천|해도|탐나|이뻐|이뿌|예뻐/.test(raw)) out.flags.push("질문?");
 
   // 1) 상품코드 찾기
@@ -825,7 +826,7 @@ function ytAutoSkip(x, c){
 async function ytAutoChange(x){
   const raw = String(x.text || "");
   if(/\?|되나요|될까요|가능한가|가능할까|있나요/.test(raw)) return "질문?";
-  const isCancel = /취소/.test(raw) && !/변경|바꿔|바꾸/.test(raw);
+  const isCancel = /취소/.test(raw) && !/변경|바꿔|바꾸|바꿀|교환/.test(raw);
   const c = ytParse(raw.replace(/[가-힣A-Za-z0-9()]+\s*(에서|말고|대신)/g, " "));
   if(!c.p) return "상품 못 찾음";
   const mine = LIST.filter(o => o.status === "미결제" && norm(o.nick) === norm(x.nick) && String(o.code) === String(c.p.code));
@@ -877,10 +878,16 @@ async function ytAutoRun(){
     for(const x of todo){
       if(!$("ytAuto").checked) break;
       const c = x.c || ytParse(x.text);
+      let forceNew = false;
       if(c.p && (c.flags.includes("변경요청") || c.flags.includes("취소요청"))){   // 변경·취소 댓글 자동 처리
-        x.auto = (await ytAutoChange(x)) || ""; continue;
+        const r = (await ytAutoChange(x)) || "";
+        // 바꿀 주문이 없는데 번호·색상·사이즈가 다 있으면 ("1번 그레이 m으로 주세요" 첫 주문) → 새 주문으로
+        const plainNew = r === "바꿀 주문 없음" && !c.flags.includes("취소요청") && !c.flags.includes("질문?")
+          && (!c.p.colors.some(v => v.name) || c.color) && c.size && !c.why.length;
+        if(!plainNew){ x.auto = r; continue; }
+        forceNew = true;
       }
-      if(!(c.complete || (c.maybe && $("ytLoose").checked))) continue;   // 단어 없이도: 번호·색상·사이즈 다 맞는 댓글도 자동
+      if(!(forceNew || c.complete || (c.maybe && $("ytLoose").checked))) continue;   // 단어 없이도: 번호·색상·사이즈 다 맞는 댓글도 자동
       const why = ytAutoSkip(x, c);
       if(why){ x.auto = why; continue; }
       const claim = await ytApi("ylcmark", { r: x.r, st:"확정" });
