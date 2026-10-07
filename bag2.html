@@ -316,8 +316,8 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 
     <div class="card">
       <h2>🔍 상품 검색 <span class="tag">품번 · 품명</span></h2>
-      <p class="hint" style="margin:0 0 10px;">방송에서 안내드린 <b>품번 뒷자리</b> 또는 <b>품명</b>을 입력하시면 상품이 나옵니다.</p>
-      <input type="text" id="q" placeholder="품명(예: 파크백) 또는 품번 뒷자리(예: 1558)" oninput="renderSearch()" style="font-size:15px;">
+      <p class="hint" style="margin:0 0 10px;">방송에서 안내드린 <b>품번 뒷자리 숫자</b>(예: 1558)를 입력하시면 사진과 함께 상품이 나옵니다.</p>
+      <input type="text" id="q" placeholder="품번 뒷자리 숫자 (예: 1558)" oninput="renderSearch()" style="font-size:15px;">
       <p class="hint" id="cnt"></p>
       <div id="list" style="margin-top:6px;"></div>
     </div>
@@ -523,8 +523,8 @@ function startOrder(){
   $("screenOrder").style.display = "block";
   renderSearch(false);
   loadSaved();
+  restoreCart();   // renderPay()가 주문목록을 다시 저장하므로, 저장된 주문목록을 먼저 복원
   renderPay();
-  restoreCart();
   window.scrollTo(0,0);
 }
 
@@ -559,6 +559,10 @@ async function loadCatalog(){
     }).filter(p => p.no);
     BYNO = {};
     PRODUCTS.forEach(p => BYNO[p.no] = p);
+    // 화면에는 품번 뒷자리(숫자+Z)만 표시. 뒷자리가 겹치는 품번만 앞 연도 2자리를 붙여 구분 (예: 16-0539Z / 17-0539Z)
+    const scCount = {};
+    PRODUCTS.forEach(p => { p.sc = shortCode(p.code); scCount[p.sc] = (scCount[p.sc] || 0) + 1; });
+    PRODUCTS.forEach(p => { if(scCount[p.sc] > 1 && /^\d\d/.test(p.code)) p.sc = p.code.slice(0,2) + "-" + p.sc; });
     loaded = true;
     renderSearch(false);
     return true;
@@ -582,7 +586,11 @@ function setColor(no, v){
   pick[no] = v;
   document.querySelectorAll("select[data-no='" + no + "']").forEach(s => { if(s.value !== v) s.value = v; });
 }
-function dispName(p){ return p.name ? p.name : p.code; }   // (검색용)
+function shortCode(code){                       // "25GZLM1193Z" → "1193Z"
+  const m = String(code||"").match(/(\d+[A-Za-z]?)$/);
+  return m ? m[1] : String(code||"");
+}
+function dispName(p){ return p.name ? p.name : (p.sc || p.code); }   // (검색용)
 function openImg(src){
   const v = $("imgView"); v.querySelector("img").src = src; v.classList.add("show");
 }
@@ -602,8 +610,8 @@ function cardHtml(p, badge){
       <div class="phead">
         ${p.img ? `<img class="pimg" src="${p.img}" alt="" loading="lazy" onclick="openImg(this.src)" onerror="this.style.display='none'">` : ""}
         <div style="flex:1;min-width:0;">
-          <div class="nm">${p.name ? p.name : p.code}</div>
-          ${p.name ? `<div class="code">품번 ${p.code}</div>` : ""}
+          <div class="nm">${p.name ? p.name : (p.sc || p.code)}</div>
+          ${p.name ? `<div class="code">품번 ${p.sc || p.code}</div>` : ""}
           <div class="pr"><span class="now">${p.price.toLocaleString()}원</span></div>
         </div>
       </div>
@@ -629,14 +637,15 @@ function renderSearch(reset){
     $("list").innerHTML = "";
     return;
   }
-  const isNum = /^\d+$/.test(q);
+  const tail = s => String(s||"").toLowerCase().replace(/^\d\d-/, "").replace(/[a-z]$/, "").replace(/^0+/, "");
+  const qt = /^\d+z?$/.test(q) ? tail(q) : "";
   let hits = PRODUCTS.filter(p =>
-    (isNum && String(p.no) === q) ||
     p.code.toLowerCase().indexOf(q) > -1 ||
+    (qt && tail(p.sc) === qt) ||
     p.name.toLowerCase().indexOf(q) > -1 ||
     p.colors.some(c => c.name.toLowerCase().indexOf(q) > -1)
   );
-  if(isNum) hits.sort((a,b) => (String(b.no)===q) - (String(a.no)===q));   // 번호 정확 일치 먼저
+  if(qt) hits.sort((a,b) => (tail(b.sc)===qt) - (tail(a.sc)===qt));   // 품번 뒷자리 정확 일치 먼저
 
   $("cnt").textContent = "검색 결과 " + hits.length + "개";
   if(!hits.length){
@@ -656,15 +665,17 @@ function addItem(no){
   const c = p.colors.find(x => x.name === color);
   if(c && c.soldout){ alert("선택하신 색상은 판매가 종료되었습니다."); return; }
   const q = qty[no] || 1;
-  const name = p.name ? (p.code + " " + p.name) : p.code;   // 주문내역: "26GZLM1558Z 파크백(블랙)x1"
+  const name = p.name ? (p.code + " " + p.name) : p.code;   // 주문내역(시트 전송): "26GZLM1558Z 파크백(블랙)x1" — 전체 품번 유지
+  const sc = p.sc || p.code;
+  const disp = p.name ? (sc + " " + p.name) : sc;            // 화면 표시: "1558Z 파크백"
   const same = cart.find(x => x.name === name && x.opt === color);
   if(same){
-    if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + name + " (" + color + ")\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
+    if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + disp + " (" + color + ")\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
     same.qty += q;
   }else{
-    if(!confirm("아래 상품을 담을까요?\n\n" + name + " (" + color + ")\n" +
+    if(!confirm("아래 상품을 담을까요?\n\n" + disp + " (" + color + ")\n" +
                 p.price.toLocaleString() + "원 × " + q + "개 = " + (p.price*q).toLocaleString() + "원")) return;
-    cart.push({ name: name, price: p.price, opt: color, qty: q });
+    cart.push({ name: name, disp: disp, img: p.img || "", price: p.price, opt: color, qty: q });
   }
   qty[no] = 1; pick[no] = "";
   document.querySelectorAll(".qv[data-no='" + no + "']").forEach(el => el.textContent = 1);
@@ -733,8 +744,9 @@ function renderCart(){
   }else{
     list.innerHTML = cart.map((c,i)=>`
       <div class="cart-item">
-        <div style="flex:1;">
-          <div class="ci-name">${c.name}</div>
+        ${c.img ? `<img class="pimg sm" src="${c.img}" alt="" loading="lazy" onerror="this.style.display='none'">` : ""}
+        <div style="flex:1;min-width:0;">
+          <div class="ci-name">${c.disp || c.name}</div>
           <div class="ci-opt">${c.opt ? c.opt + " / " : ""}${fmt(c.price)} × ${c.qty}개</div>
           <div class="ci-qty">
             <button class="qb" onclick="cartQty(${i},-1)">−</button>
@@ -768,7 +780,7 @@ function renderSummary(){
   }
   $("summaryBox").className = "";
   $("summaryBox").innerHTML =
-    cart.map(c=>`· ${c.name}${c.opt ? " (" + c.opt + ")" : ""} × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
+    cart.map(c=>`· ${c.disp || c.name}${c.opt ? " (" + c.opt + ")" : ""} × ${c.qty} = ${fmt(c.price*c.qty)}`).join("<br>") +
     `<br>· 배송비 ${isAddl() ? "무료 (추가 주문)" : isFreeShip() ? "무료 (15만원 이상)" : fmt(shipFee())}` +
     (cardVat() ? `<br>· 카드 부가세 ${fmt(cardVat())}` : "") +
     `<br><b>합계 ${fmt(payTotal())}</b>`;
@@ -960,7 +972,7 @@ async function restoreCart(){
   if(p && Date.now() - (p.ts || 0) > 2 * 86400000){ setPending(null); p = null; }
   if(Array.isArray(saved) && saved.length && !cart.length){
     cart = saved.filter(c => c && c.name && Number(c.qty) > 0)
-                .map(c => ({ name: String(c.name), price: Number(c.price)||0, opt: String(c.opt||""), qty: Number(c.qty)||1 }));
+                .map(c => ({ name: String(c.name), disp: String(c.disp||""), img: String(c.img||""), price: Number(c.price)||0, opt: String(c.opt||""), qty: Number(c.qty)||1 }));
     renderCart();
     if(p) showPendingNote(true);
   }
