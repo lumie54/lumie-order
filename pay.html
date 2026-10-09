@@ -124,6 +124,12 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 .man{display:flex;gap:10px;align-items:flex-start;background:#FFFBF2;border:1px solid #EBD9B4;border-radius:12px;padding:12px 14px;margin-bottom:10px;}
 .man .del{flex:none;background:none;border:none;color:var(--sub);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:2px 0;}
 .badge.직접추가{background:#F3E6CC;color:#7A5E12;}
+.badge.직접입력{background:#FBE3DC;color:var(--danger);}
+.fopen{margin-top:14px;background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);font-size:14.5px;padding:12px;}
+.frow{display:flex;gap:8px;margin-top:12px;}
+.frow > div{flex:1;min-width:0;}
+.frow label.fld{margin-top:0;}
+.linkbtn{background:none;border:none;color:var(--accent-dark);font-weight:800;text-decoration:underline;cursor:pointer;font-size:14px;padding:6px 0;}
 :focus-visible{outline:3px solid #E2CFA8;outline-offset:2px;}
 </style>
 </head>
@@ -180,7 +186,7 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 
     <div class="card addcard">
       <div class="sec">➕ 빠진 상품 직접 담기</div>
-      <p class="hint" style="margin:-4px 0 10px;">댓글로 주문했는데 위 목록에 없으면 여기서 담아주세요. 방송에서 부른 <b>상품코드</b>나 <b>상품명</b>으로 찾을 수 있어요.</p>
+      <p class="hint" style="margin:-4px 0 10px;">댓글로 주문했는데 위 목록에 없으면 여기서 담아주세요. 방송에서 부른 <b>상품 번호(코드)</b>나 <b>상품명</b>으로 찾을 수 있어요.</p>
       <div class="line2"><input type="text" id="aq" placeholder="예) C70  또는  트위드" autocomplete="off" enterkeyhint="search">
         <button class="btn-sm" id="aGo" style="padding:0 16px">찾기</button></div>
       <div class="res" id="aRes"></div>
@@ -192,6 +198,23 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
         <label class="fld">수량</label>
         <div class="qtyrow"><button id="qM">−</button><span id="pQty">1</span><button id="qP">＋</button></div>
         <button class="btn btn-primary" id="aAdd" style="margin-top:14px;">담기</button>
+      </div>
+
+      <button class="btn fopen" id="fOpen">✍️ 찾아도 안 나와요 · 번호와 가격 직접 입력</button>
+      <div class="picker" id="fBox" hidden>
+        <div style="font-weight:800">✍️ 번호 · 가격 직접 입력</div>
+        <p class="hint" style="margin-top:4px;">위에서 찾아도 안 나오는 상품만 적어주세요. <b style="color:var(--danger)">방송에서 안내한 번호와 가격을 그대로</b> 넣어주셔야 해요. 금액이 다르면 방송 후 따로 연락드려요.</p>
+        <div class="frow">
+          <div><label class="fld" for="fCode">상품 번호</label><input type="text" id="fCode" placeholder="예) 44" maxlength="12" autocomplete="off"></div>
+          <div><label class="fld" for="fPrice">가격 (원)</label><input type="text" id="fPrice" inputmode="numeric" placeholder="예) 39000" maxlength="10" autocomplete="off"></div>
+        </div>
+        <div class="frow">
+          <div><label class="fld" for="fColor">색상 <span class="opt">(있으면)</span></label><input type="text" id="fColor" placeholder="예) 블랙" maxlength="15" autocomplete="off"></div>
+          <div><label class="fld" for="fSize">사이즈 <span class="opt">(있으면)</span></label><input type="text" id="fSize" placeholder="예) M" maxlength="10" autocomplete="off"></div>
+        </div>
+        <label class="fld">수량</label>
+        <div class="qtyrow"><button id="fM" aria-label="수량 줄이기">−</button><span id="fQty">1</span><button id="fP" aria-label="수량 늘리기">＋</button></div>
+        <button class="btn btn-primary" id="fAdd" style="margin-top:14px;">담기</button>
       </div>
     </div>
 
@@ -296,6 +319,8 @@ let CUSTOMS = false;   // 해외배송 방송: 시트 르미에 메뉴에서 켜
 let DATA = null, SHIP = "normal", PAY = "계좌이체", sending = false, curOid = "";
 const MAN_KEY = "lumie_cmt_manual";
 let MAN = [], CAT = null, CUR = null, PC = "", PS = "", PQ = 1;   // 직접 담은 상품 / 방송상품 목록 / 고르는 중인 상품
+let CAT_AT = 0, FQ = 1;                                           // 방송상품 목록 불러온 시각 / 직접 입력 수량
+const CAT_TTL = 20000;                                            // 방송 중에 상품이 계속 등록되므로 20초 지나면 다시 불러옴
 
 function dim(on, t){ $("dimT").textContent = t || "불러오는 중입니다…"; $("dim").classList.toggle("show", on); }
 function toast(m){ const t=$("toast"); t.textContent=m; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",1800); }
@@ -393,12 +418,18 @@ function loadMan(){
 }
 function saveMan(){ try{ MAN.length ? localStorage.setItem(MAN_KEY, JSON.stringify({ nick: DATA.nick, items: MAN })) : localStorage.removeItem(MAN_KEY); }catch(e){} }
 function manOpt(m){ return [m.color, m.size].filter(Boolean).join(" / "); }
-function manText(m){ return "[직접추가] " + (m.code ? m.code + " " : "") + m.name + (manOpt(m) ? "(" + manOpt(m).replace(/ \/ /g,"/") + ")" : "") + "x" + m.qty; }
+function codeLabel(c){ c = String(c||""); return /^\d+$/.test(c) ? c + "번" : c; }
+function manName(m){ return m.free ? codeLabel(m.code) : m.name; }
+function manText(m){
+  const o = manOpt(m) ? "(" + manOpt(m).replace(/ \/ /g,"/") + ")" : "";
+  if(m.free) return "[직접입력] " + codeLabel(m.code) + o + "x" + m.qty;      // 댓글상품 탭에 없는 번호 (고객이 가격 입력)
+  return "[직접추가] " + (m.code ? m.code + " " : "") + m.name + o + "x" + m.qty;
+}
 function renderMan(){
   $("manList").innerHTML = MAN.map((m,i) => `<div class="man">
       <div class="ob">
-        ${m.code ? `<div class="code">${esc(m.code)}</div>` : ""}
-        <div class="nm">${esc(m.name)}<span class="badge 직접추가">직접 담음</span></div>
+        ${m.code && !m.free ? `<div class="code">${esc(m.code)}</div>` : ""}
+        <div class="nm">${esc(manName(m))}<span class="badge ${m.free ? "직접입력" : "직접추가"}">${m.free ? "번호·가격 직접 입력" : "직접 담음"}</span></div>
         ${manOpt(m) ? `<div class="op">${esc(manOpt(m))}</div>` : ""}
         <div class="row"><span>${won(m.price)} · ${m.qty}개</span><span class="amt">${won(m.price*m.qty)}</span></div>
       </div>
@@ -410,14 +441,14 @@ function renderMan(){
 $("manList").addEventListener("click", e => {
   const b = e.target.closest("[data-del]"); if(!b) return;
   const m = MAN[+b.dataset.del];
-  if(!confirm(m.name + " 을(를) 뺄까요?")) return;
+  if(!confirm(manName(m) + " 을(를) 뺄까요?")) return;
   MAN.splice(+b.dataset.del, 1); saveMan(); renderMan();
 });
 
 /* ---------- 방송 상품 찾기 (댓글상품 탭) ---------- */
 function splitList(v){ return (Array.isArray(v) ? v : String(v||"").split(/[,\n]/)).map(x => String(x).trim()).filter(Boolean); }
-async function loadCat(){
-  if(CAT) return CAT;
+async function loadCat(fresh){
+  if(CAT && !fresh && Date.now() - CAT_AT < CAT_TTL) return CAT;
   const j = await api("cmtcat");
   if(!j.ok) throw new Error(j.msg || "상품 목록 오류");
   const map = {}, list = [];
@@ -437,7 +468,7 @@ async function loadCat(){
     p.sizes  = [...new Set(p.combos.map(x=>x.z))].filter(Boolean);
     p.allOut = p.combos.length > 0 && p.combos.every(x=>x.out);
   });
-  CAT = list; return CAT;
+  CAT = list; CAT_AT = Date.now(); return CAT;
 }
 const nz = s => String(s||"").toLowerCase().replace(/\s+/g,"").replace(/번$/,"");
 async function aSearch(){
@@ -453,12 +484,15 @@ async function aSearch(){
     const i = CAT.indexOf(p), dis = p.allOut || !p.price;
     return `<button class="resbtn" data-p="${i}" ${dis?"disabled":""}><span><span class="rc">${esc(p.code)}</span><br><span class="rn">${esc(p.name)}</span></span>
       <span class="rp">${p.allOut ? "품절" : p.price ? won(p.price) : "가격 문의"}</span></button>`;
-  }).join("") : `<p class="empty">'${esc($("aq").value.trim())}'(으)로 찾은 상품이 없어요.<br>코드(예: C70)나 상품명 일부로 다시 찾아보세요.</p>`;
+  }).join("") : `<p class="empty">'${esc($("aq").value.trim())}'(으)로 찾은 상품이 없어요.<br>번호나 상품명 일부로 다시 찾아보세요.<br><button class="linkbtn" data-free="1">그래도 없으면 번호 · 가격 직접 입력 ›</button></p>`;
   if(hits.length === 1 && !hits[0].allOut && hits[0].price) pickProd(CAT.indexOf(hits[0]));
 }
 $("aGo").onclick = aSearch;
 $("aq").addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing) aSearch(); });
-$("aRes").addEventListener("click", e => { const b = e.target.closest(".resbtn"); if(b && !b.disabled) pickProd(+b.dataset.p); });
+$("aRes").addEventListener("click", e => {
+  if(e.target.closest("[data-free]")){ fShow($("aq").value); return; }
+  const b = e.target.closest(".resbtn"); if(b && !b.disabled) pickProd(+b.dataset.p);
+});
 function comboOut(c, z){ const m = CUR.combos.filter(x => (!c||x.c===c) && (!z||x.z===z)); return !m.length || m.every(x=>x.out); }
 function pickProd(i){
   CUR = CAT[i]; PC = CUR.colors.length === 1 ? CUR.colors[0] : ""; PS = CUR.sizes.length === 1 ? CUR.sizes[0] : ""; PQ = 1;
@@ -490,6 +524,57 @@ $("aAdd").onclick = () => {
   if(same) same.qty += PQ; else MAN.push({ code: CUR.code, name: CUR.name, color: PC, size: PS, price: CUR.price, qty: PQ });
   saveMan(); renderMan();
   $("aPick").hidden = true; $("aRes").innerHTML = ""; $("aq").value = ""; CUR = null;
+  toast("담았어요! 위 목록에서 확인해주세요");
+  $("manList").scrollIntoView({ behavior:"smooth", block:"center" });
+};
+
+/* ---------- 번호 · 가격 직접 입력 (댓글상품 탭에 없는 번호) ---------- */
+// 주문내역은 ", " 로 나뉘고 끝의 xN 을 수량으로 읽으므로 쉼표·괄호·대괄호는 입력에서 뺀다
+const fClean = (s, n) => String(s||"").replace(/[,\[\]()]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+const fNum = () => Number($("fPrice").value.replace(/[^0-9]/g, "")) || 0;
+function fShow(prefill){
+  $("fBox").hidden = false; $("fOpen").textContent = "− 직접 입력 닫기";
+  const c = fClean(prefill, 12).replace(/\s*번$/, "");
+  if(c && /\d/.test(c) && !$("fCode").value) $("fCode").value = c;
+  $("fBox").scrollIntoView({ behavior:"smooth", block:"nearest" });
+  setTimeout(() => ($("fCode").value ? $("fPrice") : $("fCode")).focus(), 200);
+}
+function fHide(){ $("fBox").hidden = true; $("fOpen").textContent = "✍️ 찾아도 안 나와요 · 번호와 가격 직접 입력"; }
+$("fOpen").onclick = () => $("fBox").hidden ? fShow("") : fHide();
+$("fPrice").addEventListener("input", () => { const n = fNum(); $("fPrice").value = n ? n.toLocaleString("ko-KR") : ""; });
+$("fM").onclick = () => { FQ = Math.max(1, FQ-1); $("fQty").textContent = FQ; };
+$("fP").onclick = () => { FQ = Math.min(20, FQ+1); $("fQty").textContent = FQ; };
+[["fCode","fPrice"],["fPrice","fColor"],["fColor","fSize"]].forEach(([a,b]) =>
+  $(a).addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); $(b).focus(); } }));
+$("fAdd").onclick = async () => {
+  const code = fClean($("fCode").value, 12).replace(/\s*번$/, ""), price = fNum();
+  const color = fClean($("fColor").value, 15), size = fClean($("fSize").value, 10);
+  if(!code){ alert("상품 번호를 적어주세요."); $("fCode").focus(); return; }
+  if(!price){ alert("방송에서 안내한 가격을 적어주세요."); $("fPrice").focus(); return; }
+  if(price < 1000){ alert("가격은 원 단위로 끝까지 적어주세요.\n예) 3만9천원 → 39000"); $("fPrice").focus(); return; }
+  if(price > 2000000 && !confirm("적으신 가격이 " + won(price) + " 이에요.\n금액이 맞나요?")) return;
+
+  // 그 사이 매니저가 등록한 번호면 등록된 가격·옵션으로 담게 한다
+  dim(true, "번호 확인 중…");
+  let reg = [];
+  try{ await loadCat(true); reg = CAT.filter(p => nz(p.code) === nz(code)); }catch(e){}
+  dim(false);
+  $("aPick").hidden = true; $("aRes").innerHTML = ""; CUR = null;
+  if(reg.some(p => p.price && !p.allOut)){
+    alert(codeLabel(code) + " 은(는) 등록된 상품이에요.\n바로 아래에 뜨는 상품에서 색상 · 사이즈를 골라 담아주세요.");
+    fHide(); $("aq").value = code; aSearch(); $("aq").scrollIntoView({ behavior:"smooth", block:"center" });
+    return;
+  }
+  if(reg.length && reg.every(p => p.allOut)){ alert(codeLabel(code) + " 은(는) 품절된 상품이에요."); return; }
+
+  const dup = DATA.items.some(it => SELECTABLE(it.status) && it.code && nz(it.code) === nz(code));
+  if(dup && !confirm("위 목록에 같은 번호가 이미 있어요.\n따로 한 장 더 주문하신 게 맞나요?\n(같은 상품이면 '취소'를 눌러주세요)")) return;
+  const opt = [color, size].filter(Boolean).join(" / ");
+  if(!confirm(`${codeLabel(code)}${opt ? "\n" + opt : "\n(색상 · 사이즈 없음)"}\n${won(price)} × ${FQ}개 = ${won(price*FQ)}\n\n방송에서 안내받은 번호 · 가격이 맞나요?\n금액이 다르면 방송 후 따로 연락드려요.`)) return;
+  const same = MAN.find(m => m.free && nz(m.code)===nz(code) && m.color===color && m.size===size && m.price===price);
+  if(same) same.qty += FQ; else MAN.push({ free: true, code, name: "", color, size, price, qty: FQ });
+  saveMan(); renderMan();
+  ["fCode","fPrice","fColor","fSize"].forEach(id => $(id).value = ""); FQ = 1; $("fQty").textContent = 1; fHide();
   toast("담았어요! 위 목록에서 확인해주세요");
   $("manList").scrollIntoView({ behavior:"smooth", block:"center" });
 };
@@ -603,12 +688,15 @@ $("submit").onclick = async () => {
     const addl = ship === 0 && SHIP === "addl" && !isFree(goods);
 
     // 2) 기존 주문 접수 (주문접수 탭)
+    const manF = MAN.filter(m => m.free);   // 번호·가격 직접 입력분 → 요청사항에 입력한 가격을 남김
     const order = {
       time: new Date().toLocaleString("ko-KR"),
       nick: DATA.nick, name: $("cName").value.trim(), phone: $("cPhone").value.trim(),
       zip: $("cZip").value.trim(), addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
       memo: $("cMemo").value.trim(),
-      req: ("[댓글주문]" + (cus ? "[통관 " + cus + "]" : "") + (MAN.length ? "[직접추가 확인필요]" : "") + " " + $("cReq").value.trim()).trim(),
+      req: ("[댓글주문]" + (cus ? "[통관 " + cus + "]" : "") + (MAN.some(m=>!m.free) ? "[직접추가 확인필요]" : "") +
+            (manF.length ? "[직접입력 확인필요: " + manF.map(m => codeLabel(m.code) + " " + won(m.price)).join(" / ") + "]" : "") +
+            " " + $("cReq").value.trim()).trim(),
       items: [c.items, ...MAN.map(manText)].filter(Boolean).join(", ") + (addl ? " [추가주문]" : ""),
       goods, ship, vat, total, agree: CONFIG.AGREE, pay: PAY, oid: curOid,
       replace: c.replace || "", cat: CONFIG.CAT,
