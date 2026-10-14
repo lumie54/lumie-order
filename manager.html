@@ -261,10 +261,38 @@ const label = code => /^\d+$/.test(String(code||"")) ? code + "번" : String(cod
 let CAT = [], cur = null, color = "", LIST = [], lastNotice = "", busy = false;
 
 function toast(m, ms){ const t=$("toast"); t.textContent=m; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none", ms||2200); }
-async function api(mode, params){
+// 서버 잠금(LockService) 충돌 방지: 이 화면의 요청은 한 줄로 세워서 하나씩 보내고,
+// "잠금 시간 초과"가 나면 잠깐 기다렸다가 자동으로 다시 보냄
+const LOCK_RE = /잠금|lock|timed out|too long/i;
+const API_WRITE = /^(cmtadd|cmtcancel|ylcmark|ylcprod)$/;
+let apiChain = Promise.resolve(), apiWrites = 0;
+async function apiRaw(mode, params){
   const qs = new URLSearchParams(Object.assign({ mode, pin: PIN, t: Date.now() }, params||{}));
   const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString());
-  return r.json();
+  const txt = await r.text();
+  try{ return JSON.parse(txt); }
+  catch(e){ return { ok:false, msg: LOCK_RE.test(txt) ? "잠금 시간 초과" : "서버 응답 오류", _lock: LOCK_RE.test(txt) }; }
+}
+function api(mode, params){
+  const write = API_WRITE.test(mode);
+  // 저장 대기 중에는 주기적 조회(목록·유튜브)는 건너뛰어 저장이 먼저 들어가게
+  if(!write && apiWrites > 0 && (mode === "cmtlist" || mode === "ylcpoll")) return Promise.resolve({ ok:false, skipped:true });
+  if(write) apiWrites++;
+  const run = async () => {
+    let j;
+    for(let i = 0; i < 4; i++){
+      j = await apiRaw(mode, params);
+      const lock = j && !j.ok && (j._lock || LOCK_RE.test(String(j.msg||"")));
+      if(!lock) break;
+      if(i < 3){ if(write) toast("서버가 바빠서 다시 저장 중… (" + (i+2) + "/4)", 1800); await new Promise(res => setTimeout(res, 1500 * (i+1))); }
+      else j.msg = "서버가 바빠 저장 못했어요 — 잠시 후 다시 눌러주세요";
+    }
+    return j;
+  };
+  const p = apiChain.then(run, run);
+  apiChain = p.catch(() => {});
+  if(write) p.finally(() => { apiWrites--; }).catch(() => {});
+  return p;
 }
 async function copy(txt){
   try{ await navigator.clipboard.writeText(txt); return true; }catch(e){ return false; }
