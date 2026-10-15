@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#3E332A">
+<meta name="robots" content="noindex">
+<title>엘리자벳 현황판 · 르미에</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#F5EFE6; --card:#fff; --soft:#FBF7F0; --ink:#3E332A; --sub:#8A7A68; --line:#E5DACB;
+  --accent:#B08D57; --accent-dark:#8F6F3F;
+  --warn-bg:#FFF1CC; --warn:#8A5A00;
+  --full-bg:#DCEFD8; --full:#2F6B2F;
+  --over-bg:#F9D9D3; --over:#A3301F;
+  --none:#EFEAE3;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:"Pretendard",-apple-system,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;overflow:hidden;user-select:none;-webkit-user-select:none;}
+button{font-family:inherit;color:inherit;}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%;}
+/* 상단 */
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--ink);color:#fff;flex-wrap:wrap;}
+.top .ttl{font-size:17px;font-weight:800;margin-right:4px;}
+.top .stat{font-size:14px;opacity:.9;}
+.top .stat b{font-size:17px;}
+.top .sync{font-size:12.5px;opacity:.8;display:flex;align-items:center;gap:6px;}
+.dot{width:9px;height:9px;border-radius:50%;background:#7BC47F;display:inline-block;}
+.dot.bad{background:#F07B6B;}
+.top .sp{flex:1;}
+.tb{border:1.5px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:10px;padding:9px 14px;font-size:15px;font-weight:700;cursor:pointer;min-height:44px;}
+.tb.on{background:#fff;color:var(--over);border-color:#fff;}
+.tb:active{opacity:.7;}
+#pendBar{display:none;background:var(--over);color:#fff;font-weight:700;font-size:14px;padding:6px 14px;text-align:center;}
+/* 본문 */
+.main{display:grid;grid-template-columns:190px 1fr 300px;min-height:0;}
+.rail{overflow-y:auto;border-right:1px solid var(--line);background:var(--soft);padding:8px;-webkit-overflow-scrolling:touch;}
+.pbtn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:8px;margin-bottom:6px;cursor:pointer;min-height:56px;}
+.pbtn.on{border-color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink);}
+.pbtn .n{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--accent-dark);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.pbtn .t{flex:1;min-width:0;font-size:12.5px;line-height:1.3;}
+.pbtn .t .nm{font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pbtn .t .lf{color:var(--sub);}
+.pbtn .flag{flex:0 0 auto;width:10px;height:10px;border-radius:50%;}
+.flag.over{background:var(--over);} .flag.warn{background:#E0A526;}
+.center{overflow-y:auto;padding:14px 16px 30px;-webkit-overflow-scrolling:touch;}
+.side{overflow-y:auto;border-left:1px solid var(--line);background:var(--soft);padding:12px;-webkit-overflow-scrolling:touch;}
+/* 상품 상세 */
+.phead{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
+.phead img{width:96px;height:96px;object-fit:cover;border-radius:12px;background:#EDE7DE;flex:0 0 auto;}
+.phead .num{display:inline-block;background:var(--accent-dark);color:#fff;font-weight:800;border-radius:8px;padding:3px 10px;font-size:18px;}
+.phead .sale{display:inline-block;background:var(--over);color:#fff;font-weight:800;border-radius:8px;padding:3px 8px;font-size:13px;margin-left:4px;}
+.phead .nm{font-size:22px;font-weight:800;margin-top:4px;line-height:1.25;}
+.phead .pr{font-size:15px;color:var(--sub);margin-top:2px;}
+.navbtns{margin-left:auto;display:flex;gap:8px;}
+.navbtns button{width:56px;height:56px;border:1.5px solid var(--line);background:#fff;border-radius:12px;font-size:22px;cursor:pointer;}
+.grid{display:grid;gap:8px;align-items:stretch;}
+.gh{text-align:center;font-size:15px;font-weight:800;color:var(--sub);padding:2px 0;}
+.gc{display:flex;align-items:center;font-size:16px;font-weight:800;line-height:1.2;padding-right:4px;word-break:keep-all;}
+.cell{border:1.5px solid var(--line);background:#fff;border-radius:14px;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:transform .06s;}
+.cell:active{transform:scale(.95);}
+.cell .big{font-size:32px;font-weight:900;line-height:1;}
+.cell .big.word{font-size:21px;}
+.cell .sm{font-size:12.5px;color:var(--sub);margin-top:6px;font-weight:600;}
+.cell .sm b{color:var(--ink);}
+.cell.warn{background:var(--warn-bg);border-color:#EBC66B;} .cell.warn .big{color:var(--warn);}
+.cell.full{background:var(--full-bg);border-color:#9CCB95;} .cell.full .big{color:var(--full);}
+.cell.over{background:var(--over-bg);border-color:#E39A8C;} .cell.over .big{color:var(--over);}
+.cell.none{background:var(--none);border-style:dashed;color:#B5A998;cursor:default;}
+.cell.none:active{transform:none;}
+.cell.flash{animation:fl .45s;}
+@keyframes fl{0%{box-shadow:0 0 0 0 rgba(62,51,42,.5);}100%{box-shadow:0 0 0 14px rgba(62,51,42,0);}}
+.cell .sm{white-space:nowrap;}
+.cell .sm.mis{color:var(--over);} .cell .sm.mis b{color:var(--over);}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--sub);}
+.legend span{padding:4px 10px;border-radius:8px;font-weight:700;}
+/* 전체 보기 */
+.ov{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;}
+.ovc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;}
+.ovc .h{font-size:14px;font-weight:800;margin-bottom:6px;display:flex;gap:6px;align-items:center;}
+.ovc .h .n{background:var(--accent-dark);color:#fff;border-radius:6px;padding:1px 7px;}
+.ovc table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px;}
+.ovc td,.ovc th{border:1px solid var(--line);text-align:center;padding:4px 1px;}
+.ovc th{color:var(--sub);font-weight:700;font-size:12px;}
+.ovc td.c{text-align:left;padding-left:4px;font-weight:700;font-size:12px;overflow:hidden;white-space:nowrap;}
+.ovc td.warn{background:var(--warn-bg);color:var(--warn);font-weight:800;}
+.ovc td.full{background:var(--full-bg);color:var(--full);font-weight:800;}
+.ovc td.over{background:var(--over-bg);color:var(--over);font-weight:800;}
+.ovc td.none{background:var(--none);color:#C2B8AA;}
+/* 오른쪽 */
+.side h3{font-size:15px;font-weight:800;margin:4px 0 8px;display:flex;justify-content:space-between;align-items:center;}
+.side h3 small{font-weight:600;color:var(--sub);font-size:12px;}
+.sbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:14px;}
+.srow{font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--line);line-height:1.4;}
+.srow:last-child{border-bottom:none;}
+.srow .tm{color:var(--sub);font-size:12px;margin-right:4px;}
+.srow.dup{color:var(--over);font-weight:700;}
+.empty{color:var(--sub);font-size:13px;padding:8px 0;text-align:center;}
+.mis-row{font-size:13.5px;padding:7px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;gap:6px;cursor:pointer;}
+.mis-row:last-child{border-bottom:none;}
+.mis-row b{white-space:nowrap;}
+.morebtn{display:block;width:100%;margin-top:6px;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:800;font-size:17px;padding:12px 22px;border-radius:30px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;}
+#toast.show{opacity:.95;}
+#err{display:none;padding:40px 20px;text-align:center;color:var(--over);font-weight:700;}
+/* 세로 화면 */
+@media (orientation:portrait), (max-width:1000px){
+  .main{grid-template-columns:150px 1fr;grid-template-rows:1fr auto;}
+  .side{grid-column:1 / -1;border-left:none;border-top:1px solid var(--line);max-height:30vh;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .side > div{min-width:0;}
+  .pbtn .t .lf{display:none;}
+  .cell{min-height:84px;}
+  .top{gap:8px;padding:8px 10px;}
+  .top .ttl{font-size:15px;}
+  .top .stat{font-size:13px;}
+  .tb{padding:8px 10px;font-size:14px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div>
+    <div class="top">
+      <span class="ttl">👠 엘리자벳 현황판</span>
+      <span class="stat">주문서 <b id="sOrders">0</b>건 · <b id="sPairs">0</b>켤레</span>
+      <span class="stat">누른 수 <b id="sTaps">0</b></span>
+      <span class="sync"><span class="dot" id="dot"></span><span id="sTime">불러오는 중…</span></span>
+      <span class="sp"></span>
+      <button class="tb" id="bView" onclick="toggleView()">전체 보기</button>
+      <button class="tb" id="bMinus" onclick="toggleMinus()">빼기 모드</button>
+      <button class="tb" onclick="undo()">↶ 되돌리기</button>
+      <button class="tb" onclick="menu()">⋯</button>
+    </div>
+    <div id="pendBar"></div>
+  </div>
+  <div class="main">
+    <div class="rail" id="rail"></div>
+    <div class="center" id="center"><div id="err"></div></div>
+    <div class="side">
+      <div>
+        <h3>확인 필요 <small>누른 수 ≠ 주문 수</small></h3>
+        <div class="sbox" id="misBox"></div>
+      </div>
+      <div>
+        <h3>특가 주문 <small id="spCnt"></small></h3>
+        <div class="sbox" id="spBox"></div>
+      </div>
+      <div>
+        <h3>방금 들어온 주문</h3>
+        <div class="sbox" id="rcBox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ================================================================
+   ★ 엘리자벳 슈즈 현황판 (아이패드용)
+   - 칸을 누르면 그 사이즈 '누른 수' +1 → 남은 수량 = 리스트 수량 − 누른 수
+   - 작은 글씨 = 누른 수 / 주문서로 들어온 수
+   - 누른 기록은 구글시트 '엘리자벳현황' 탭에 저장 (새로고침·여러 기기 OK)
+   ================================================================ */
+const CONFIG = {
+  SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
+  IMG_BASE: "images/shoes1015/",
+  POLL_MS: 8000,
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const nkey = s => String(s == null ? "" : s).replace(/\s+/g, "");
+const kOf = (num, color, size) => num + "|" + nkey(color) + "|" + size;
+
+let D = null;                 // 서버 데이터
+let serverTaps = {};          // 서버에 저장된 누른 수
+const pending = {};           // 아직 서버에 안 간 +/- (키별 합)
+const queue = [];             // 보낼 순서 [{k,d}]
+let sending = false, lastAck = 0, failCount = 0;
+const hist = [];              // 되돌리기용
+let minus = false, view = "one", cur = null;
+try{ cur = Number(localStorage.getItem("sbd_cur")) || null; view = localStorage.getItem("sbd_view") || "one"; }catch(e){}
+
+function taps(k){ return Math.max(0, (serverTaps[k] || 0) + (pending[k] || 0)); }
+function ords(k){ return (D && D.orders && D.orders[k]) || 0; }
+function cellState(list, t){
+  if(list <= 0) return t > 0 ? "over" : "none";
+  const left = list - t;
+  if(left < 0) return "over";
+  if(left === 0) return "full";
+  if(left === 1) return "warn";
+  return "";
+}
+
+/* ---------- 불러오기 ---------- */
+async function load(){
+  const started = Date.now();
+  try{
+    const r = await fetch(CONFIG.SHEET_URL + "?mode=sbdget&t=" + started, { cache:"no-store" });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.msg || "서버 오류");
+    D = j;
+    if(started >= lastAck) serverTaps = j.taps || {};
+    if(!cur || !findP(cur)) cur = j.items.length ? j.items[0].num : null;
+    $("dot").classList.remove("bad");
+    $("sTime").textContent = j.ts + " 갱신";
+    $("err").style.display = "none";
+    render();
+  }catch(e){
+    $("dot").classList.add("bad");
+    $("sTime").textContent = "연결 안 됨 · 다시 시도 중";
+    if(!D){ $("err").style.display = "block"; $("err").textContent = "불러오지 못했어요: " + (e.message || e) + " — 잠시 후 자동으로 다시 시도해요."; }
+  }
+}
+const findP = n => D && D.items.find(p => p.num === Number(n));
+
+/* ---------- 누르기 ---------- */
+function tap(num, color, size, el){
+  const p = findP(num); if(!p) return;
+  const c = p.colors.find(x => nkey(x.color) === nkey(color));
+  const list = c ? (c.qty[size] || 0) : 0;
+  const k = kOf(num, color, size);
+  const d = minus ? -1 : 1;
+  if(d < 0 && taps(k) <= 0){ toast("뺄 수 없어요 (0)"); return; }
+  if(list <= 0 && d > 0){ toast("리스트에 없는 사이즈예요"); return; }
+  pending[k] = (pending[k] || 0) + d;
+  queue.push({ k, d });
+  hist.push({ k, d, label: num + "번 " + color + " " + size });
+  if(hist.length > 50) hist.shift();
+  const left = list - taps(k);
+  toast(num + "번 " + color + " " + size + (d > 0 ? " +1" : " −1") + " · " + (left < 0 ? (-left) + "개 초과" : left === 0 ? "마감" : "남은 " + left));
+  render(k);
+  send();
+}
+function undo(){
+  const h = hist.pop();
+  if(!h){ toast("되돌릴 기록이 없어요"); return; }
+  pending[h.k] = (pending[h.k] || 0) - h.d;
+  queue.push({ k: h.k, d: -h.d });
+  toast("되돌림 · " + h.label + (h.d > 0 ? " −1" : " +1"));
+  render(h.k);
+  send();
+}
+async function send(){
+  if(sending || !queue.length) return;
+  sending = true;
+  const it = queue[0];
+  try{
+    const r = await fetch(CONFIG.SHEET_URL + "?mode=sbdtap&k=" + encodeURIComponent(it.k) + "&d=" + it.d + "&t=" + Date.now(), { cache:"no-store" });
+    const j = await r.json();
+    if(!j.ok){
+      // 0 에서 빼기 같은 건 서버가 무시 — 그냥 버림
+      queue.shift(); pending[it.k] = (pending[it.k] || 0) - it.d;
+    }else{
+      queue.shift(); pending[it.k] = (pending[it.k] || 0) - it.d;
+      serverTaps = j.taps || serverTaps; lastAck = Date.now();
+    }
+    failCount = 0;
+  }catch(e){
+    failCount++;
+  }
+  sending = false;
+  pendUI();
+  render();
+  if(queue.length) setTimeout(send, failCount ? Math.min(5000, 1000 * failCount) : 0);
+}
+function pendUI(){
+  const n = queue.length;
+  $("pendBar").style.display = (n && failCount) ? "block" : "none";
+  $("pendBar").textContent = "⚠️ 인터넷이 불안정해 " + n + "개가 아직 저장 안 됐어요 — 화면은 그대로 두세요, 자동으로 다시 보내요";
+}
+
+/* ---------- 그리기 ---------- */
+function productSummary(p){
+  let left = 0, flag = "";
+  p.colors.forEach(c => D.sizes.forEach(z => {
+    const k = kOf(p.num, c.color, z), l = c.qty[z] || 0, t = taps(k);
+    if(l > 0) left += Math.max(0, l - t);
+    const st = cellState(l, t);
+    if(st === "over") flag = "over";
+  }));
+  return { left, flag };
+}
+function render(flashKey){
+  if(!D) return;
+  let tt = 0; Object.keys(serverTaps).forEach(k => tt += taps(k)); Object.keys(pending).forEach(k => { if(!(k in serverTaps)) tt += taps(k); });
+  $("sTaps").textContent = tt;
+  $("sOrders").textContent = D.orderCount || 0;
+  $("sPairs").textContent = D.pairCount || 0;
+  $("bView").textContent = view === "all" ? "한 상품 보기" : "전체 보기";
+  $("bMinus").classList.toggle("on", minus);
+  $("bMinus").textContent = minus ? "빼기 모드 켜짐" : "빼기 모드";
+  // 왼쪽 상품 목록
+  $("rail").innerHTML = D.items.map(p => {
+    const s = productSummary(p);
+    const nm = p.name.replace(/\s*초특가$/, "");
+    return `<button class="pbtn${p.num===cur && view==="one"?' on':''}" onclick="go(${p.num})"><span class="n">${p.num}</span><span class="t"><span class="nm">${esc(nm)}</span><span class="lf">남은 ${s.left}</span></span>${s.flag?`<span class="flag ${s.flag}"></span>`:''}</button>`;
+  }).join("");
+  // 가운데
+  $("center").innerHTML = '<div id="err" style="display:none"></div>' + (view === "all" ? renderAll() : renderOne(flashKey));
+  renderSide();
+}
+function renderOne(flashKey){
+  const p = findP(cur); if(!p) return "";
+  const sale = /\s*초특가$/.test(p.name), nm = p.name.replace(/\s*초특가$/, "");
+  const cols = D.sizes.length;
+  let g = `<div class="grid" style="grid-template-columns:96px repeat(${cols},minmax(0,1fr));"><div></div>` + D.sizes.map(z => `<div class="gh">${z}</div>`).join("");
+  p.colors.forEach(c => {
+    g += `<div class="gc">${esc(c.color)}</div>`;
+    D.sizes.forEach(z => {
+      const k = kOf(p.num, c.color, z), l = c.qty[z] || 0, t = taps(k), o = ords(k);
+      const st = cellState(l, t), left = l - t;
+      const ca = `'${esc(c.color).replace(/'/g,"\\'")}'`;
+      if(st === "none"){ g += `<div class="cell none"><span class="sm">없음</span></div>`; return; }
+      const big = left < 0 ? `<span class="big word">+${-left} 초과</span>` : left === 0 ? `<span class="big word">마감</span>` : `<span class="big">${left}</span>`;
+      const mis = t !== o ? " mis" : "";
+      g += `<div class="cell ${st}${k===flashKey?' flash':''}" onclick="tap(${p.num},${ca},'${z}',this)">${big}<span class="sm${mis}">누름 <b>${t}</b> · 주문 <b>${o}</b></span></div>`;
+    });
+  });
+  g += "</div>";
+  const idx = D.items.indexOf(p);
+  return `<div class="phead"><img src="${CONFIG.IMG_BASE}${p.num}.jpg" onerror="this.style.visibility='hidden'" alt="">
+      <div><span class="num">${p.num}번</span>${sale?'<span class="sale">초특가</span>':''}<div class="nm">${esc(nm)}</div><div class="pr">${Number(p.price).toLocaleString("ko-KR")}원</div></div>
+      <div class="navbtns"><button onclick="go(${idx>0?D.items[idx-1].num:p.num})">▲</button><button onclick="go(${idx<D.items.length-1?D.items[idx+1].num:p.num})">▼</button></div></div>` + g +
+    `<div class="legend"><span style="background:var(--warn-bg);color:var(--warn)">1개 남음</span><span style="background:var(--full-bg);color:var(--full)">마감</span><span style="background:var(--over-bg);color:var(--over)">초과</span><span>큰 숫자 = 남은 수량 · 작은 글씨 = 내가 누른 수 · 주문서 수 (다르면 빨간 글씨)</span></div>`;
+}
+function renderAll(){
+  return '<div class="ov">' + D.items.map(p => {
+    const nm = p.name.replace(/\s*초특가$/, "");
+    let t = `<table><tr><th style="width:62px"></th>${D.sizes.map(z=>`<th>${z}</th>`).join("")}</tr>`;
+    p.colors.forEach(c => {
+      t += `<tr><td class="c">${esc(c.color)}</td>` + D.sizes.map(z => {
+        const k = kOf(p.num, c.color, z), l = c.qty[z] || 0, tp = taps(k), st = cellState(l, tp), left = l - tp;
+        return `<td class="${st}">${st==="none"?"·":left<0?"+"+(-left):left===0?"마감":left}</td>`;
+      }).join("") + "</tr>";
+    });
+    return `<div class="ovc" onclick="go(${p.num})"><div class="h"><span class="n">${p.num}</span>${esc(nm)}</div>${t}</table></div>`;
+  }).join("") + "</div>";
+}
+function renderSide(){
+  // 누른 수 ≠ 주문 수
+  const keys = {};
+  Object.keys(serverTaps).concat(Object.keys(pending), Object.keys(D.orders || {})).forEach(k => keys[k] = 1);
+  const mis = Object.keys(keys).map(k => ({ k, t: taps(k), o: ords(k) })).filter(x => x.t !== x.o)
+    .sort((a,b) => { const [an,,az] = a.k.split("|"), [bn,,bz] = b.k.split("|"); return (an - bn) || (az - bz); });
+  $("misBox").innerHTML = mis.length ? mis.map(x => {
+    const [n, c, z] = x.k.split("|");
+    return `<div class="mis-row" onclick="go(${n})"><span>${n}번 ${esc(c)} ${z}</span><b style="color:${x.t > x.o ? 'var(--over)' : 'var(--warn)'}">누름 ${x.t} · 주문 ${x.o}</b></div>`;
+  }).join("") : '<div class="empty">다 맞아요</div>';
+  const sp = D.specials || [];
+  $("spCnt").textContent = sp.length ? sp.length + "건" : "";
+  $("spBox").innerHTML = sp.length ? sp.slice().reverse().map(s =>
+    `<div class="srow${s.dup?' dup':''}"><span class="tm">${esc(s.t)}</span><b>${esc(s.name)}</b> · ${esc(s.color)}/${esc(s.size)} · ${Number(s.price).toLocaleString("ko-KR")}${s.dup?' <br>⚠️ 같은 이름 여러 건':''}${s.nick && nkey(s.nick)!==nkey(s.name)?'<br><span class="tm">주문자 '+esc(s.nick)+'</span>':''}</div>`).join("") : '<div class="empty">아직 없어요</div>';
+  const rc = D.recent || [];
+  $("rcBox").innerHTML = rc.length ? rc.slice(0, 12).map(r => `<div class="srow"><span class="tm">${esc(r.t)}</span>${esc(r.nick)} · ${esc(r.txt)}</div>`).join("") : '<div class="empty">아직 없어요</div>';
+}
+function go(n){ cur = Number(n); view = "one"; try{ localStorage.setItem("sbd_cur", cur); localStorage.setItem("sbd_view", view); }catch(e){} render(); $("center").scrollTop = 0; }
+function toggleView(){ view = view === "all" ? "one" : "all"; try{ localStorage.setItem("sbd_view", view); }catch(e){} render(); }
+function toggleMinus(){ minus = !minus; render(); toast(minus ? "빼기 모드 — 누르면 1개씩 빠져요" : "더하기 모드로 돌아왔어요"); }
+let tt0 = null;
+function toast(m){ const t = $("toast"); t.textContent = m; t.classList.add("show"); clearTimeout(tt0); tt0 = setTimeout(() => t.classList.remove("show"), 1600); }
+async function menu(){
+  const a = prompt("메뉴 번호를 입력하세요\n\n1 = 새로고침\n2 = 누른 수 전부 지우기 (방송 시작 전에만)\n\n(취소하면 닫혀요)");
+  if(a === "1"){ location.reload(); return; }
+  if(a === "2"){
+    if(!confirm("누른 수를 전부 지울까요?\n지운 기록은 시트에 '엘리자벳현황_백업' 탭으로 남아요.")) return;
+    if(!confirm("정말 지울까요? 방송 중이면 [취소]를 누르세요.")) return;
+    try{
+      const r = await fetch(CONFIG.SHEET_URL + "?mode=sbdreset&ok=1&t=" + Date.now(), { cache:"no-store" });
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.msg);
+      hist.length = 0; queue.length = 0; Object.keys(pending).forEach(k => delete pending[k]);
+      serverTaps = {}; lastAck = Date.now(); toast("지웠어요"); load();
+    }catch(e){ alert("지우지 못했어요: " + (e.message || e)); }
+  }
+}
+// 화면 꺼짐 방지
+async function keepAwake(){ try{ if("wakeLock" in navigator) await navigator.wakeLock.request("screen"); }catch(e){} }
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible"){ keepAwake(); load(); } });
+window.addEventListener("beforeunload", e => { if(queue.length){ e.preventDefault(); e.returnValue = ""; } });
+keepAwake();
+load();
+setInterval(() => { if(!sending) load(); }, CONFIG.POLL_MS);
+setInterval(() => { if(queue.length && !sending) send(); }, 3000);
+</script>
+</body>
+</html>
