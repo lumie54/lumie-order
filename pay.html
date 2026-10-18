@@ -46,8 +46,13 @@ input:focus{outline:none;border-color:var(--accent);}
 .policy .pt{font-size:14px;font-weight:800;color:var(--danger);margin-bottom:8px;}
 .policy p{font-size:13.5px;margin-bottom:6px;}
 .nicklist{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
-.nickbtn{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:15px;font-weight:700;cursor:pointer;}
-.nickbtn span{color:var(--accent-dark);font-size:13px;}
+.nickbtn{display:block;width:100%;text-align:left;background:#FFF8EC;border:2px solid var(--accent);border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;color:inherit;font-family:inherit;}
+.nickbtn .nn{font-size:19px;font-weight:800;}
+.nickbtn .sfx{font-size:14px;color:var(--sub);font-weight:600;}
+.nickbtn .pv{margin-top:8px;font-size:13.5px;font-weight:600;color:#444;line-height:1.5;}
+.nickbtn .pv b{color:var(--accent-dark);}
+.nickbtn .go{display:block;margin-top:10px;background:var(--accent);color:#fff;text-align:center;border-radius:10px;padding:11px;font-size:16px;font-weight:800;}
+.sfxnote{font-size:12.5px;color:var(--sub);background:var(--soft);border-radius:10px;padding:9px 11px;}
 .empty{text-align:center;color:var(--sub);padding:14px 0 4px;font-size:14px;}
 
 .bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
@@ -152,9 +157,9 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <input type="text" id="q" placeholder="댓글에 쓴 닉네임 (두세 글자만 넣어도 돼요)" autocomplete="off" enterkeyhint="search">
       <div style="margin-top:14px;"><button class="btn btn-primary" id="goSearch">🔍 내 주문 찾기</button></div>
       <p class="hint">'주문완료' 안내를 들으신 뒤 1~2분쯤 지나면 목록에 올라와요. 한참 지나도 안 보이면 채널 또는 유튜브 댓글로 닉네임을 남겨주세요.</p>
+      <p class="hint" id="nickWarn" hidden style="color:var(--danger);font-weight:700;">⚠️ 비슷한 닉네임이 여러 개 있어요. <u>내가 주문한 상품이 보이는 칸</u>을 눌러주세요.</p>
       <div class="nicklist" id="nicks"></div>
       <button class="btn" id="goManual" style="margin-top:14px;background:#fff;border:1.5px solid var(--accent);color:var(--accent-dark);font-size:14.5px;padding:12px;">📝 내 주문이 안 보여요 · 직접 담아서 주문하기</button>
-      <p class="hint" id="nickWarn" hidden style="color:var(--danger);font-weight:700;">⚠️ 비슷한 닉네임이 여러 개 있어요. 띄어쓰기·숫자·특수문자까지 <u>내 닉네임과 똑같은지</u> 꼭 확인하고 눌러주세요.</p>
     </div>
 
     <div class="policy">
@@ -338,17 +343,52 @@ document.addEventListener("click", async e => {
 $("vatLbl").textContent = "부가세 " + Math.round(CONFIG.CARD_VAT_RATE*100) + "%";
 
 /* ---------- ① 닉네임 검색 ---------- */
+/* 유튜브가 닉네임 뒤에 붙이는 '-486' 같은 꼬리·앞의 @ 를 떼어낸 기본 이름 */
+function nickBase(n){ return String(n||"").trim().replace(/^@+/,"").replace(/[-_.]\d{2,}$/,"").trim(); }
+function nickSfx(n){ const m = String(n||"").trim().replace(/^@+/,"").match(/[-_.]\d{2,}$/); return m ? m[0] : ""; }
+function normQ(s){ return String(s||"").replace(/^@+/,"").replace(/\s+/g,"").toLowerCase(); }
+function itemsPreview(items){
+  if(!items || !items.length) return "";
+  const nm = it => (it.code ? (/^\d+$/.test(it.code) ? it.code + "번 " : it.code + " ") : "") + (it.name||"") + ([it.color,it.size].filter(Boolean).length ? "(" + [it.color,it.size].filter(Boolean).join("/") + ")" : "");
+  const shown = items.slice(0,2).map(nm).map(esc).join("<br>");
+  return `🛍 ${shown}${items.length>2 ? `<br>외 ${items.length-2}개` : ""}`;
+}
 async function search(){
-  const q = $("q").value.trim();
+  const raw = $("q").value.trim();
+  const q = raw.replace(/^@+/,"").trim();
   if(!q){ $("q").focus(); return; }
   dim(true, "닉네임 찾는 중…");
   try{
-    const j = await api("cmtsearch", { q });
-    const list = (j.ok && j.nicks) || [];
-    $("nicks").innerHTML = list.length
-      ? list.map(n => `<button class="nickbtn" data-n="${esc(n)}">${esc(n)}<span>이 닉네임이 저예요 ›</span></button>`).join("")
-      : `<p class="empty">'${esc(q)}'(으)로 찾은 댓글주문이 아직 없어요.<br>글자 수를 줄이거나 잠시 뒤 다시 찾아보세요.<br>그래도 없으면 아래 <b>직접 담아서 주문하기</b>를 눌러주세요.</p>`;
-    $("nickWarn").hidden = list.length < 2;
+    let j = await api("cmtsearch", { q });
+    let list = (j.ok && j.nicks) || [];
+    // 띄어쓰기 때문에 못 찾으면 띄어쓰기 빼고 한 번 더
+    if(!list.length && /\s/.test(q)){ j = await api("cmtsearch", { q: q.replace(/\s+/g,"") }); list = (j.ok && j.nicks) || []; }
+    if(!list.length){
+      $("nicks").innerHTML = `<p class="empty">'${esc(q)}'(으)로 찾은 댓글주문이 아직 없어요.<br>글자 수를 줄이거나 잠시 뒤 다시 찾아보세요.<br>그래도 없으면 아래 <b>직접 담아서 주문하기</b>를 눌러주세요.</p>`;
+      $("nickWarn").hidden = true; dim(false); return;
+    }
+    // 닉네임마다 주문 상품을 미리 불러와서 보여줌 → 내 주문인지 상품으로 알아볼 수 있게
+    dim(true, "주문 상품 확인 중…");
+    const top = list.slice(0, 6);
+    const det = await Promise.all(top.map(n => api("cmtitems", { nick: n }).catch(() => null)));
+    // 기본 이름이 입력과 정확히 같은 것을 맨 위로
+    const rows = top.map((n,i) => ({ n, d: det[i] && det[i].ok ? det[i] : null, exact: normQ(nickBase(n)) === normQ(q) || normQ(n) === normQ(q) }))
+                    .sort((a,b) => (b.exact - a.exact));
+    // 딱 하나만 찾았고 이름이 같으면 바로 주문 화면으로
+    if(rows.length === 1 && rows[0].exact && rows[0].d){
+      dim(false); showOrder(rows[0].d); return;
+    }
+    const anySfx = rows.some(r => nickSfx(r.n));
+    $("nicks").innerHTML = rows.map(r => {
+      const base = nickBase(r.n) || r.n, sfx = nickSfx(r.n);
+      const pv = r.d ? itemsPreview(r.d.items) : "";
+      return `<button class="nickbtn" data-n="${esc(r.n)}">
+        <span class="nn">${esc(base)}</span>${sfx ? `<span class="sfx">${esc(sfx)}</span>` : ""}
+        ${pv ? `<div class="pv">${pv}</div>` : ""}
+        <span class="go">👉 내 주문 보고 결제하기</span></button>`;
+    }).join("") + (list.length > top.length ? `<p class="hint">비슷한 닉네임이 더 있어요. 닉네임을 더 길게 넣어 다시 찾아주세요.</p>` : "")
+      + (anySfx ? `<p class="sfxnote">💡 닉네임 뒤의 <b>-486</b> 같은 숫자는 유튜브가 자동으로 붙인 거예요. 신경 쓰지 말고 <b>내 상품이 보이는 칸</b>을 눌러주세요.</p>` : "");
+    $("nickWarn").hidden = rows.length < 2;
   }catch(e){ $("nicks").innerHTML = `<p class="empty">연결이 잠깐 불안정해요. 다시 한 번 눌러주세요.</p>`; }
   dim(false);
 }
@@ -362,12 +402,15 @@ async function openNick(nick){
   try{
     const j = await api("cmtitems", { nick });
     if(!j.ok) throw new Error(j.msg);
-    DATA = j;
-    try{ localStorage.setItem(NICK_KEY, j.nick); }catch(e){}
-    render();
-    show("sOrder");
+    showOrder(j);
   }catch(e){ toast("불러오지 못했어요. 다시 눌러주세요."); }
   dim(false);
+}
+function showOrder(j){
+  DATA = j;
+  try{ localStorage.setItem(NICK_KEY, j.nick); }catch(e){}
+  render();
+  show("sOrder");
 }
 $("back").onclick = () => show("sSearch");
 $("goManual").onclick = () => {
