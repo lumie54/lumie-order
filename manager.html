@@ -266,10 +266,18 @@ function toast(m, ms){ const t=$("toast"); t.textContent=m; t.style.display="blo
 const LOCK_RE = /잠금|lock|timed out|too long/i;
 const API_WRITE = /^(cmtadd|cmtcancel|ylcmark|ylcprod)$/;
 let apiChain = Promise.resolve(), apiWrites = 0;
+// 요청 하나가 응답 없이 멈추면 뒤 요청이 전부 막혀 '계속 로딩'이 되므로, 20초 넘으면 끊고 다음으로 넘어감
+const API_TIMEOUT_MS = 20000;
 async function apiRaw(mode, params){
   const qs = new URLSearchParams(Object.assign({ mode, pin: PIN, t: Date.now() }, params||{}));
-  const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString());
-  const txt = await r.text();
+  const ac = new AbortController(), th = setTimeout(() => ac.abort(), API_TIMEOUT_MS);
+  let txt;
+  try{
+    const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString(), { signal: ac.signal });
+    txt = await r.text();
+  }catch(e){
+    return { ok:false, _timeout:true, msg: "서버 응답이 늦어요 — 아래 입력 내역에 들어갔는지 확인 후, 없으면 다시 눌러주세요" };
+  }finally{ clearTimeout(th); }
   try{ return JSON.parse(txt); }
   catch(e){ return { ok:false, msg: LOCK_RE.test(txt) ? "잠금 시간 초과" : "서버 응답 오류", _lock: LOCK_RE.test(txt) }; }
 }
@@ -282,6 +290,7 @@ function api(mode, params){
     let j;
     for(let i = 0; i < 4; i++){
       j = await apiRaw(mode, params);
+      if(j && j._timeout){ if(write) setTimeout(() => { try{ loadList(); }catch(e){} }, 300); break; }  // 저장은 됐을 수도 있어서 자동 재시도 안 함
       const lock = j && !j.ok && (j._lock || LOCK_RE.test(String(j.msg||"")));
       if(!lock) break;
       if(i < 3){ if(write) toast("서버가 바빠서 다시 저장 중… (" + (i+2) + "/4)", 1800); await new Promise(res => setTimeout(res, 1500 * (i+1))); }
