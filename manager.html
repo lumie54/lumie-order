@@ -270,7 +270,7 @@ let apiChain = Promise.resolve(), apiWrites = 0;
 const API_TIMEOUT_MS = 20000;
 async function apiRaw(mode, params){
   const qs = new URLSearchParams(Object.assign({ mode, pin: PIN, t: Date.now() }, params||{}));
-  const ac = new AbortController(), th = setTimeout(() => ac.abort(), API_TIMEOUT_MS);
+  const ac = new AbortController(), th = setTimeout(() => ac.abort(), /^(ylcstart|ylcstop|cmtping)$/.test(mode) ? 120000 : API_TIMEOUT_MS);  // 방송 연결은 원래 오래 걸려서 2분까지 기다림
   let txt;
   try{
     const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString(), { signal: ac.signal });
