@@ -196,10 +196,15 @@ const LOCK_RE = /잠금|lock|timed out|too long/i;
 let chain = Promise.resolve();
 async function apiRaw(mode, params){
   const qs = new URLSearchParams(Object.assign({ mode, pin: PIN, t: Date.now() }, params||{}));
-  const ac = new AbortController(), th = setTimeout(() => ac.abort(), mode === "cmtping" ? 60000 : 20000);
+  // 등록은 서버 잠금 대기로 20초 넘게 걸리기도 해서 45초까지 기다림
+  const limit = mode === "cmtping" ? 60000 : 45000;
+  const ac = new AbortController(), th = setTimeout(() => ac.abort(), limit), t0 = Date.now();
   let txt;
   try{ const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString(), { signal: ac.signal }); txt = await r.text(); }
-  catch(e){ return { ok:false, _timeout:true, msg:"서버 응답이 늦어요 — 목록에 들어갔는지 확인 후 없으면 다시 눌러주세요" }; }
+  catch(e){
+    const slow = ac.signal.aborted || Date.now() - t0 > limit - 1000;
+    return { ok:false, _timeout:true, msg: slow ? "서버 응답이 늦어요 — 목록에 들어갔는지 확인 후 없으면 다시 눌러주세요"
+                                               : "서버 연결 실패(인터넷/서버 오류) — 목록 확인 후 없으면 다시 눌러주세요" }; }
   finally{ clearTimeout(th); }
   try{ return JSON.parse(txt); }
   catch(e){ return { ok:false, _lock: LOCK_RE.test(txt), msg: LOCK_RE.test(txt) ? "잠금 시간 초과" : "서버 응답 오류" }; }

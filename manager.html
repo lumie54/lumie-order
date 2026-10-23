@@ -267,16 +267,21 @@ const LOCK_RE = /잠금|lock|timed out|too long/i;
 const API_WRITE = /^(cmtadd|cmtcancel|ylcmark|ylcprod)$/;
 let apiChain = Promise.resolve(), apiWrites = 0;
 // 요청 하나가 응답 없이 멈추면 뒤 요청이 전부 막혀 '계속 로딩'이 되므로, 20초 넘으면 끊고 다음으로 넘어감
-const API_TIMEOUT_MS = 20000;
+const API_TIMEOUT_MS = 20000, API_WRITE_TIMEOUT_MS = 45000;
 async function apiRaw(mode, params){
   const qs = new URLSearchParams(Object.assign({ mode, pin: PIN, t: Date.now() }, params||{}));
-  const ac = new AbortController(), th = setTimeout(() => ac.abort(), /^(ylcstart|ylcstop|cmtping)$/.test(mode) ? 120000 : API_TIMEOUT_MS);  // 방송 연결은 원래 오래 걸려서 2분까지 기다림
+  // 저장(cmtadd 등)은 서버가 잠금 대기하느라 20초 넘게 걸리는 경우가 있어 45초까지 기다림
+  const limit = /^(ylcstart|ylcstop|cmtping)$/.test(mode) ? 120000 : API_WRITE.test(mode) ? API_WRITE_TIMEOUT_MS : API_TIMEOUT_MS;  // 방송 연결은 원래 오래 걸려서 2분까지 기다림
+  const ac = new AbortController(), th = setTimeout(() => ac.abort(), limit), t0 = Date.now();
   let txt;
   try{
     const r = await fetch(CONFIG.SHEET_URL + "?" + qs.toString(), { signal: ac.signal });
     txt = await r.text();
   }catch(e){
-    return { ok:false, _timeout:true, msg: "서버 응답이 늦어요 — 아래 입력 내역에 들어갔는지 확인 후, 없으면 다시 눌러주세요" };
+    const slow = ac.signal.aborted || Date.now() - t0 > limit - 1000;
+    return { ok:false, _timeout:true, msg: slow
+      ? "서버 응답이 늦어요 — 아래 입력 내역에 들어갔는지 확인 후, 없으면 다시 눌러주세요"
+      : "서버 연결 실패(인터넷/서버 오류) — 아래 입력 내역 확인 후, 없으면 다시 눌러주세요" };
   }finally{ clearTimeout(th); }
   try{ return JSON.parse(txt); }
   catch(e){ return { ok:false, msg: LOCK_RE.test(txt) ? "잠금 시간 초과" : "서버 응답 오류", _lock: LOCK_RE.test(txt) }; }
