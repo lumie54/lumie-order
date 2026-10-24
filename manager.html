@@ -575,7 +575,7 @@ $("qAdd").onclick = () => qAddProd(false);
   $(id).addEventListener("keydown", e => { if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); qAddProd(false); } }));
 
 /* ================= 유튜브 라이브 댓글 ================= */
-const YT_POLL_ON = 8000, YT_POLL_OFF = 30000;
+const YT_POLL_ON = 15000, YT_POLL_OFF = 30000, YT_POLL_QUOTA = 300000;  // 유튜브 할당량 아끼려고 15초 간격, 할당량 초과면 5분 간격
 let YT = [], ytSince = 0, ytState = {}, ytPendingRow = 0, ytTimer = null, ytFirst = true;
 // 창을 최소화하거나 다른 창에 가려져도 8초 간격 유지 (브라우저는 숨은 창의 타이머를 1분까지 늦춤 → 워커 타이머는 안 늦춤)
 const ytSchedule = (() => {
@@ -748,7 +748,7 @@ function ytSetState(st){
   if(ytState.on){ el.textContent = "● 수집 중" + (ytState.title ? " · " + ytState.title.slice(0,24) : ""); el.className = "ytst on"; }
   else { el.textContent = ytState.ended ? "방송 종료됨" : "연결 안 됨"; el.className = "ytst"; }
   const m = $("ytMsg");
-  if(ytState.err && ytState.on){ m.textContent = "유튜브 오류: " + ytState.err; m.style.display = "block"; }
+  if(ytState.err && ytState.on){ m.textContent = /quota|할당량/i.test(String(ytState.err)) ? "유튜브 하루 사용량 초과 — 오후 4시(한국시간) 이후 다시 수집돼요. 그 전엔 댓글 보고 직접 입력해 주세요" : "유튜브 오류: " + ytState.err; m.style.display = "block"; }
   else m.style.display = "none";
 }
 
@@ -768,7 +768,8 @@ async function ytPoll(){
       ytAutoRun();
     } else if(j.msg){ $("ytMsg").textContent = j.msg; $("ytMsg").style.display = "block"; }
   }catch(e){}
-  ytSchedule(ytState.on ? YT_POLL_ON : YT_POLL_OFF);
+  const quota = /quota|할당량/i.test(String(ytState.err||""));
+  ytSchedule(ytState.on ? (quota ? YT_POLL_QUOTA : YT_POLL_ON) : YT_POLL_OFF);
 }
 
 function ytRender(){
