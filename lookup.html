@@ -131,12 +131,22 @@ async function lookup(){
   $("btnGo").disabled = false;
 }
 
+// "2026. 10. 23. 오후 10:18:08" → 비교용 숫자
+function tkey(t){
+  const m = String(t || "").match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*(오전|오후|AM|PM)?\s*(\d{1,2})?:?(\d{2})?:?(\d{2})?/i);
+  if(!m) return 0;
+  let h = Number(m[5] || 0);
+  if(/오후|PM/i.test(m[4] || "") && h < 12) h += 12;
+  if(/오전|AM/i.test(m[4] || "") && h === 12) h = 0;
+  return new Date(+m[1], +m[2] - 1, +m[3], h, +(m[6] || 0), +(m[7] || 0)).getTime();
+}
 function render(list){
   const box = $("results");
   if(!Array.isArray(list) || !list.length){
     box.innerHTML = "<div class='card'><div class='empty'>최근 2주 이내 조회된 주문이 없습니다.<br>닉네임과 연락처를 다시 확인해주세요.</div></div>";
     return;
   }
+  list.sort((x, y) => tkey(y.time) - tkey(x.time));   // 최신 주문이 위로
   box.innerHTML = list.map(o => `
     <div class="order">
       <div class="tab">📦 ${o.tab}</div>
