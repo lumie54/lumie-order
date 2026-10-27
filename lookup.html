@@ -89,13 +89,13 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 
   <div class="card">
     <label class="fld">닉네임</label>
-    <input type="text" id="qNick" placeholder="주문 시 입력한 닉네임">
+    <input type="text" id="qNick" placeholder="닉네임 (앞 2~3글자만 써도 돼요)">
     <label class="fld">연락처</label>
     <input type="tel" id="qPhone" inputmode="tel" placeholder="주문 시 입력한 연락처">
     <div style="margin-top:16px;">
       <button class="btn btn-primary" id="btnGo" onclick="lookup()">🔍 조회하기</button>
     </div>
-    <p class="hint">주문 시 입력하신 닉네임과 연락처가 모두 일치해야 조회되며, <b>최근 2주 이내 주문만</b> 확인하실 수 있습니다.</p>
+    <p class="hint">닉네임은 <b>일부만</b>(2글자 이상) 써도 되고, 연락처는 주문 때 적은 번호 <b>전체</b>를 넣어주세요. <b>최근 2주 이내 주문만</b> 확인하실 수 있습니다.</p>
   </div>
 
   <div id="results"></div>
