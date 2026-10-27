@@ -748,7 +748,7 @@ function ytSetState(st){
   if(ytState.on){ el.textContent = "● 수집 중" + (ytState.title ? " · " + ytState.title.slice(0,24) : ""); el.className = "ytst on"; }
   else { el.textContent = ytState.ended ? "방송 종료됨" : "연결 안 됨"; el.className = "ytst"; }
   const m = $("ytMsg");
-  if(ytState.err && ytState.on){ m.textContent = /quota|할당량/i.test(String(ytState.err)) ? "유튜브 하루 사용량 초과 — 오후 4시(한국시간) 이후 다시 수집돼요. 그 전엔 댓글 보고 직접 입력해 주세요" : "유튜브 오류: " + ytState.err; m.style.display = "block"; }
+  if(ytState.err && ytState.on){ m.textContent = /quota|할당량/i.test(String(ytState.err)) ? "유튜브 하루 사용량 초과 — 한국시간 오후 4시(11월부터는 5시) 이후 다시 수집돼요. 그 전엔 댓글 보고 직접 입력해 주세요" : "유튜브 오류: " + ytState.err; m.style.display = "block"; }
   else m.style.display = "none";
 }
 
