@@ -79,7 +79,7 @@ input:focus{outline:none;border-color:var(--accent);}
 .count{text-align:right;font-size:13px;color:var(--sub);}
 
 .choice{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.choice.two{grid-template-columns:1fr 1fr;}
+.choice.two,.choice.four{grid-template-columns:1fr 1fr;}
 .choice button{background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:10px 4px;cursor:pointer;text-align:center;}
 .choice button small{display:block;font-size:12.5px;color:var(--sub);font-weight:600;}
 .choice button b{font-size:14.5px;}
@@ -249,7 +249,8 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 
     <div class="card" id="payCard">
       <div class="sec">🚚 배송비</div>
-      <div class="choice">
+      <div class="choice" id="shipChoice">
+        <button data-s="promo" id="promoBtn" hidden><small>10/29 주문하신 분</small><b>2,000원</b></button>
         <button data-s="normal"><small>기본 배송</small><b>4,000원</b></button>
         <button data-s="island"><small>제주 · 도서산간</small><b>7,000원</b></button>
         <button data-s="addl"><small>오늘 합배송</small><b>0원</b></button>
@@ -307,7 +308,9 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
 /* ================= 설정 ================= */
 const CONFIG = {
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
-  SHIP: { normal: 4000, island: 7000, addl: 0 },
+  SHIP: { normal: 4000, island: 7000, addl: 0, promo: 2000 },
+  // 하루만 쓰는 택배비 할인: date 날짜에만 버튼이 보이고, 지나면 자동으로 사라짐
+  SHIP_PROMO: { date: "2026-10-30", prev: "2026-10-29", fee: 2000, tag: "[10/29주문 택배비2천]" },
   FREE_SHIP_MIN: 150000,          // 이번 결제 상품이 이 금액 이상이면 무료배송
   CARD_VAT_RATE: 0.10,            // 카드결제 부가세 (상품금액 기준)
   RETURN_PAGE: "pay",             // 카드 결제 후 돌아올 파일명
@@ -445,7 +448,7 @@ function render(){
 
   loadMan();
   renderMan();
-  SHIP = DATA.orderedToday ? "addl" : "normal";
+  SHIP = DATA.orderedToday ? "addl" : promoDefault() ? "promo" : "normal";
   loadSaved();
   calc();
 }
@@ -625,6 +628,8 @@ $("fAdd").onclick = async () => {
 function picked(){ return [...document.querySelectorAll("#items .chk:checked")].map(c => DATA.items[c.dataset.i]); }
 function goodsOf(list){ return list.reduce((s,it)=>s+it.price*it.qty, 0); }
 function isFree(goods){ return CUSTOMS || goods >= CONFIG.FREE_SHIP_MIN; }   // 해외배송 방송 날은 전부 무료배송
+function promoOn(){ return todayStr() === CONFIG.SHIP_PROMO.date; }
+function promoDefault(){ try{ return promoOn() && localStorage.getItem("lumie_last_order") === CONFIG.SHIP_PROMO.prev; }catch(e){ return false; } }
 function shipFee(goods){ if(!goods) return 0; if(isFree(goods)) return 0; return CONFIG.SHIP[SHIP] || 0; }
 function vatOf(goods){ return PAY==="카드" ? Math.round(goods*CONFIG.CARD_VAT_RATE) : 0; }
 
@@ -634,10 +639,13 @@ function calc(){
   const nSel = sel.length + MAN.length;
   $("count").textContent = nSel ? `${nSel}개 상품 · 수량 ${qty}개 결제 예정` : "";
   const free = isFree(goods);
+  $("promoBtn").hidden = !promoOn(); $("shipChoice").classList.toggle("four", promoOn());
+  if(SHIP==="promo" && !promoOn()) SHIP = "normal";
   document.querySelectorAll("[data-s]").forEach(b => { b.classList.toggle("on", !free && b.dataset.s===SHIP); b.disabled = free; });
   document.querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p===PAY));
   $("shipMsg").textContent = CUSTOMS ? "🎉 오늘은 모든 주문 무료배송이에요! (해외배송 · 약 2주 소요)"
     : free ? `🎉 ${won(CONFIG.FREE_SHIP_MIN)} 넘어서 배송비는 저희가 낼게요!`
+    : SHIP==="promo" ? "어제(10/29) 주문해주신 언니들은 오늘 택배비 2,000원이에요 💕"
     : SHIP==="addl" ? (DATA.orderedToday ? "오늘 먼저 결제하신 주문이 있어서 같이 묶어 보내드려요." : "오늘 이미 결제한 주문이 있을 때만 골라주세요.")
     : `상품 금액이 ${won(CONFIG.FREE_SHIP_MIN)} 이상이면 배송비가 없어요.`;
   const ship = shipFee(goods), vat = vatOf(goods);
@@ -716,6 +724,7 @@ $("submit").onclick = async () => {
      !confirm("'오늘 합배송(배송비 0원)'을 고르셨어요.\n오늘 먼저 결제한 주문이 있을 때만 해당돼요.\n\n이대로 진행할까요?")) return;
 
   const goods = goodsOf(sel) + goodsOf(MAN), ship = shipFee(goods), vat = vatOf(goods), total = goods + ship + vat;
+  if(SHIP==="promo" && ship && !confirm("'10/29 주문하신 분(택배비 2,000원)'을 고르셨어요.\n어제 10/29에 주문하신 분만 해당돼요.\n\n이대로 진행할까요?")) return;
   if(PAY==="카드" && total < 1000){ alert("카드결제는 1,000원 이상부터 가능해요."); return; }
   if(!confirm(`상품 ${sel.length + MAN.length}개 · ${won(total)} (${PAY})\n\n수령인 ${$("cName").value}${cus ? " · 통관부호 " + cus : ""}\n${$("cAddr").value} ${$("cAddr2").value}${CUSTOMS ? "\n✈️ 해외배송이라 약 2주 걸려요." : ""}\n\n이 주소로 보내드릴까요?`)) return;
 
@@ -737,7 +746,7 @@ $("submit").onclick = async () => {
       nick: DATA.nick, name: $("cName").value.trim(), phone: $("cPhone").value.trim(),
       zip: $("cZip").value.trim(), addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
       memo: $("cMemo").value.trim(),
-      req: ("[댓글주문]" + (cus ? "[통관 " + cus + "]" : "") + (MAN.some(m=>!m.free) ? "[직접추가 확인필요]" : "") +
+      req: ((SHIP==="promo" && ship ? CONFIG.SHIP_PROMO.tag : "") + "[댓글주문]" + (cus ? "[통관 " + cus + "]" : "") + (MAN.some(m=>!m.free) ? "[직접추가 확인필요]" : "") +
             (manF.length ? "[직접입력 확인필요: " + manF.map(m => codeLabel(m.code) + " " + won(m.price)).join(" / ") + "]" : "") +
             " " + $("cReq").value.trim()).trim(),
       items: [c.items, ...MAN.map(manText)].filter(Boolean).join(", ") + (addl ? " [추가주문]" : ""),
