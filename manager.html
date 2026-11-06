@@ -72,6 +72,10 @@ td.num{text-align:right;white-space:nowrap}
 .st.카드결제대기,.st.입금대기{background:#e6eef8;color:#2d4f7c}
 .st.결제완료{background:#e3efe4;color:var(--ok)}
 .st.취소{background:#f1ece6;color:#9b8f82}
+.st.저장중{background:#eee;color:#777}
+.st.저장실패{background:#fbe3e0;color:#b3261e}
+.st.확인필요{background:#fdebd3;color:#9a5a00}
+tr.pend td{color:#8a8178}
 .mini{background:#fff;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer;margin-left:4px}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;display:none;z-index:50;max-width:90vw}
 .lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:40}
@@ -265,7 +269,8 @@ function toast(m, ms){ const t=$("toast"); t.textContent=m; t.style.display="blo
 // "잠금 시간 초과"가 나면 잠깐 기다렸다가 자동으로 다시 보냄
 const LOCK_RE = /잠금|lock|timed out|too long/i;
 const API_WRITE = /^(cmtadd|cmtcancel|ylcmark|ylcprod)$/;
-let apiChain = Promise.resolve(), apiWrites = 0;
+// 조회(목록·유튜브)와 저장을 따로 줄 세움 → 주문 저장이 유튜브 조회 뒤에서 기다리지 않음
+let apiChain = Promise.resolve(), writeChain = Promise.resolve(), apiWrites = 0;
 // 요청 하나가 응답 없이 멈추면 뒤 요청이 전부 막혀 '계속 로딩'이 되므로, 20초 넘으면 끊고 다음으로 넘어감
 const API_TIMEOUT_MS = 20000, API_WRITE_TIMEOUT_MS = 45000;
 async function apiRaw(mode, params){
@@ -303,8 +308,8 @@ function api(mode, params){
     }
     return j;
   };
-  const p = apiChain.then(run, run);
-  apiChain = p.catch(() => {});
+  const p = write ? writeChain.then(run, run) : apiChain.then(run, run);
+  if(write) writeChain = p.catch(() => {}); else apiChain = p.catch(() => {});
   if(write) p.finally(() => { apiWrites--; }).catch(() => {});
   return p;
 }
@@ -458,8 +463,10 @@ $("mPrice").addEventListener("input", () => $("price").value = $("mPrice").value
 /* ---------- 주문 추가 ---------- */
 function optText(col, size){ return [col, size && size.toUpperCase()!=="FREE" ? size : ""].filter(Boolean).join(" "); }
 let lastAddedId = "";
-async function addOrder(){
-  if(busy) return false;
+// 저장은 뒤에서 처리 — 누르는 즉시 입력칸 비우고 다음 주문 입력 가능
+let PEND = [], pendSeq = 0;
+const RECENT = new Map();  // 방금 저장된 주문 (목록 새로고침이 늦게 와도 안 사라지게)
+function addOrder(){
   const manual = $("manual").style.display !== "none";
   const nick = $("nick").value.trim();
   const code = manual ? "" : (cur ? cur.code : "");
@@ -468,34 +475,53 @@ async function addOrder(){
   const size = $("size").value.trim();
   const qty = Math.max(1, parseInt($("qty").value,10) || 1);
   const price = Number(String($("price").value).replace(/[^0-9]/g,"")) || 0;
-  if(!name){ toast("상품을 먼저 고르세요"); $("q").focus(); return; }
-  if(!nick){ toast("닉네임을 입력하세요"); $("nick").focus(); return; }
-  if(!manual && cur && cur.colors.some(c=>c.name) && !col){ toast("색상을 고르세요"); return; }
-  if(!size){ toast("사이즈를 입력하세요 (없으면 FREE)"); $("size").focus(); return; }
-  if(price < 100){ toast("단가를 확인하세요"); $("price").focus(); return; }
+  if(!name){ toast("상품을 먼저 고르세요"); $("q").focus(); return Promise.resolve(false); }
+  if(!nick){ toast("닉네임을 입력하세요"); $("nick").focus(); return Promise.resolve(false); }
+  if(!manual && cur && cur.colors.some(c=>c.name) && !col){ toast("색상을 고르세요"); return Promise.resolve(false); }
+  if(!size){ toast("사이즈를 입력하세요 (없으면 FREE)"); $("size").focus(); return Promise.resolve(false); }
+  if(price < 100){ toast("단가를 확인하세요"); $("price").focus(); return Promise.resolve(false); }
 
-  busy = true; $("addBtn").disabled = true;
-  try{
-    const j = await api("cmtadd", { nick, code, name, color: col, size, qty, price, memo: $("memo").value.trim() });
-    if(!j.ok){ toast(j.msg || "저장 실패"); return false; }
-    LIST.unshift(j.item); renderList();
-    lastAddedId = (j.item && j.item.id) || "";
-    if(ytPendingRow){ ytMarkDone(ytPendingRow, lastAddedId); ytPendingRow = 0; }
-    lastNotice = CONFIG.NOTICE.replace("{nick}", nick).replace("{code}", label(code)).replace("{name}", name)
-                   .replace("{opt}", optText(col, size) + (qty>1 ? " " + qty + "개" : "")).replace(/\s+/g," ").trim();
-    const ok = await copy(lastNotice);
-    $("lastTxt").textContent = (ok ? "복사됨: " : "") + lastNotice;
-    $("last").classList.add("show");
-    toast(ok ? "저장 + 안내문구 복사 완료" : "저장 완료");
-    // 다음 입력 준비: 상품은 유지, 나머지 비움
-    $("nick").value = ""; $("qty").value = 1; $("memo").value = "";
-    if(!(cur && cur.colors.filter(c=>c.name).length===1)) color = "";
-    if(!(cur && cur.sizes.length<=1)) $("size").value = "";
-    renderColors(); renderSizes();
-    $("nick").focus();
-    return true;
-  }catch(e){ toast("서버 연결 실패 — 다시 시도하세요"); return false; }
-  finally{ busy = false; $("addBtn").disabled = false; }
+  const params = { nick, code, name, color: col, size, qty, price, memo: $("memo").value.trim() };
+  const ytRow = ytPendingRow; ytPendingRow = 0;
+  const now = new Date(), hh = String(now.getHours()).padStart(2,"0"), mm = String(now.getMinutes()).padStart(2,"0");
+  const tmp = Object.assign({}, params, { id: "tmp" + (++pendSeq), time: "0000-00-00 " + hh + ":" + mm, status: "저장중", _t: Date.now(), _params: params, _yt: ytRow });
+  PEND.unshift(tmp); renderList();
+
+  // 안내문구는 바로 복사 (버튼 누른 순간이라 복사가 잘 됨)
+  lastNotice = CONFIG.NOTICE.replace("{nick}", nick).replace("{code}", label(code)).replace("{name}", name)
+                 .replace("{opt}", optText(col, size) + (qty>1 ? " " + qty + "개" : "")).replace(/\s+/g," ").trim();
+  copy(lastNotice).then(ok => { $("lastTxt").textContent = (ok ? "복사됨: " : "") + lastNotice; $("last").classList.add("show"); });
+
+  // 다음 입력 준비: 상품은 유지, 나머지 비움
+  $("nick").value = ""; $("qty").value = 1; $("memo").value = "";
+  if(!(cur && cur.colors.filter(c=>c.name).length===1)) color = "";
+  if(!(cur && cur.sizes.length<=1)) $("size").value = "";
+  renderColors(); renderSizes();
+  $("nick").focus();
+
+  return savePend(tmp);
+}
+async function savePend(tmp){
+  tmp.status = "저장중"; tmp.msg = ""; renderList();
+  let j;
+  try{ j = await api("cmtadd", tmp._params); }catch(e){ j = { ok:false, msg:"서버 연결 실패" }; }
+  if(j && j.ok && j.item){
+    PEND = PEND.filter(x => x !== tmp);
+    LIST = LIST.filter(x => x.id !== j.item.id); LIST.unshift(j.item);
+    RECENT.set(j.item.id, { item: j.item, t: Date.now() });
+    lastAddedId = j.item.id || "";
+    if(tmp._yt) ytMarkDone(tmp._yt, lastAddedId);
+    renderList(); renderColors();
+    toast("저장됨 · " + tmp.nick, 1200);
+    return { id: lastAddedId };
+  }
+  // 시간 초과는 실제로 저장됐을 수도 있음 → 목록 새로고침 때 같은 주문 보이면 자동으로 지움
+  tmp.status = j && j._timeout ? "확인필요" : "저장실패";
+  tmp.msg = (j && j.msg) || "저장 실패";
+  renderList();
+  toast("⚠️ " + tmp.nick + "님 주문 " + tmp.status + " — 입력 내역 맨 위 [다시] 눌러주세요", 4000);
+  if(tmp._yt){ const y = YT.find(v => v.r===tmp._yt); if(y){ y.st = ""; ytRender(); } ytApi("ylcmark", { r: tmp._yt, st:"" }); tmp._yt = 0; }
+  return false;
 }
 $("addBtn").onclick = addOrder;
 ["nick","size","qty","price","memo","colorTxt","mName","mPrice"].forEach(id =>
@@ -506,7 +532,15 @@ $("lastCopy").onclick = async () => { if(await copy(lastNotice)) toast("복사�
 async function loadList(){
   try{
     const j = await api("cmtlist", { hours: $("range").value });
-    if(j.ok){ LIST = j.items; renderList(); renderColors(); }
+    if(j.ok){
+      LIST = j.items;
+      const ids = new Set(LIST.map(x => x.id)), now = Date.now();
+      RECENT.forEach((v, id) => { if(now - v.t > 90000) RECENT.delete(id); else if(!ids.has(id)) LIST.unshift(v.item); });
+      // '확인필요'(시간 초과) 주문이 실제로 저장돼 있으면 정리
+      PEND = PEND.filter(p => !(p.status === "확인필요" && LIST.some(x => x.nick===p.nick && String(x.code)===String(p.code) && x.name===p.name
+               && (x.color||"")===(p.color||"") && x.size===p.size && Number(x.qty)===Number(p.qty))));
+      renderList(); renderColors();
+    }
   }catch(e){}
 }
 $("refresh").onclick = loadList;
@@ -515,8 +549,14 @@ $("filter").addEventListener("input", renderList);
 
 function renderList(){
   const f = norm($("filter").value);
+  const pend = PEND.filter(x => !f || norm(x.nick).includes(f) || norm(x.code+x.name).includes(f)).map(x => `<tr class="pend">
+      <td>${esc(x.time.slice(11,16))}</td><td><b>${esc(x.nick)}</b></td>
+      <td>${esc(label(x.code))} ${esc(x.name)}</td><td>${esc(optText(x.color, x.size))}</td>
+      <td class="num">${x.qty}</td><td class="num">${won(x.price*x.qty)}</td>
+      <td><span class="st ${x.status}" title="${esc(x.msg||"")}">${x.status==="저장중" ? "저장 중…" : esc(x.status)}</span></td>
+      <td style="white-space:nowrap">${x.status==="저장중" ? "" : `<button class="mini" data-retry="${x.id}">다시</button><button class="mini" data-drop="${x.id}">지우기</button>`}</td></tr>`).join("");
   const rows = LIST.filter(x => !f || norm(x.nick).includes(f) || norm(x.code+x.name).includes(f));
-  $("rows").innerHTML = rows.map(x => {
+  $("rows").innerHTML = pend + rows.map(x => {
     const cancelled = x.status === "취소";
     const act = cancelled ? `<button class="mini" data-undo="${x.id}">되살리기</button>`
       : (x.status==="미결제"||x.status==="카드결제대기") ? `<button class="mini" data-cancel="${x.id}">취소</button>` : "";
@@ -526,12 +566,20 @@ function renderList(){
       <td class="num">${x.qty}</td><td class="num">${won(x.price*x.qty)}</td>
       <td><span class="st ${esc(x.status)}">${esc(x.status)}</span></td>
       <td style="white-space:nowrap">${act}</td></tr>`;
-  }).join("") || `<tr><td colspan="8" style="color:var(--sub);text-align:center;padding:24px">입력된 주문이 없어요</td></tr>`;
+  }).join("") || (pend ? "" : `<tr><td colspan="8" style="color:var(--sub);text-align:center;padding:24px">입력된 주문이 없어요</td></tr>`);
+  const saving = PEND.filter(x => x.status==="저장중").length;
   const live = LIST.filter(x => x.status!=="취소");
   const cnt = s => live.filter(x => x.status===s).length;
-  $("stats").innerHTML = `전체 <b>${live.length}</b> · 미결제 <b>${cnt("미결제")+cnt("카드결제대기")}</b> · 입금대기 <b>${cnt("입금대기")}</b> · 결제완료 <b>${cnt("결제완료")}</b> · 합계 <b>${won(live.reduce((s,x)=>s+x.price*x.qty,0))}</b>`;
+  $("stats").innerHTML = (saving ? `저장 중 <b>${saving}</b> · ` : "") + (PEND.length - saving ? `<b style="color:#b3261e">저장실패 ${PEND.length - saving}</b> · ` : "") + `전체 <b>${live.length}</b> · 미결제 <b>${cnt("미결제")+cnt("카드결제대기")}</b> · 입금대기 <b>${cnt("입금대기")}</b> · 결제완료 <b>${cnt("결제완료")}</b> · 합계 <b>${won(live.reduce((s,x)=>s+x.price*x.qty,0))}</b>`;
 }
 $("rows").addEventListener("click", async e => {
+  const rb = e.target.closest("[data-retry],[data-drop]");
+  if(rb){
+    const t = PEND.find(x => x.id === (rb.dataset.retry || rb.dataset.drop)); if(!t) return;
+    if(rb.dataset.drop){ if(confirm(t.nick + "님 " + label(t.code) + " 주문을 목록에서 지울까요? (저장 안 된 주문)")){ PEND = PEND.filter(x => x !== t); renderList(); } return; }
+    if(t.status === "확인필요"){ await loadList(); if(!PEND.includes(t)){ toast("이미 저장돼 있었어요"); return; } }
+    savePend(t); return;
+  }
   const c = e.target.closest("[data-cancel],[data-undo]"); if(!c) return;
   const id = c.dataset.cancel || c.dataset.undo, undo = !!c.dataset.undo;
   const x = LIST.find(i => i.id===id);
@@ -955,9 +1003,9 @@ async function ytConfirm(r){
   x.st = "확정"; ytRender();
   ytFill(x);
   ytPendingRow = 0;
-  const ok = await addOrder();
-  if(!ok){ x.st = ""; ytRender(); ytApi("ylcmark", { r, st:"" }); return; }
-  ytApi("ylcmark", { r, st:"확정", oid: lastAddedId });
+  const res = await addOrder();
+  if(!res){ x.st = ""; ytRender(); ytApi("ylcmark", { r, st:"" }); return; }
+  ytApi("ylcmark", { r, st:"확정", oid: res.id });
 }
 function ytFillAndWait(r){
   const x = YT.find(v => v.r===r); if(!x) return;
