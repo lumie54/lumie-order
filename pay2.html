@@ -255,13 +255,14 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       </div>
 
       <label class="agree"><input type="checkbox" class="chk" id="agree">
-        <span>상품 · 배송지를 확인했고, <b>교환 · 반품 불가</b> 규정에 동의합니다.</span></label>
+        <span>상품 · 배송지<span class="leadAg"></span>를 확인했고, <b>교환 · 반품 불가</b> 규정에 동의합니다.</span></label>
       <button class="btn btn-primary" id="submit" disabled>상품을 담아주세요</button>
     </div>
 
     <div class="policy">
       <div class="pt">🚫 주문 전에 꼭 확인해주세요</div>
       <p>라이브방송 상품은 수령 후 <b>교환 · 반품이 불가</b>합니다. (단순 변심 · 사이즈 · 착용감 · 미세 하자 포함)</p>
+      <p id="leadPol" hidden></p>
       <p>· 취소는 <b>방송 중 댓글</b>로 말씀해주세요. 방송이 끝난 뒤에는 변경·취소가 어려워요.</p>
       <p>· 중대한 하자 · 오배송 · 파손은 <b>수령 후 24시간 이내</b> 사진과 함께 채널로 문의해주세요.</p>
     </div>
@@ -276,14 +277,14 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div id="dBank">
         <div class="acct"><div><div class="num">3333-18-3356907</div><div class="bank">카카오뱅크 · 김푸름</div></div>
           <button class="btn-sm" style="padding:9px 12px" data-copy="3333-18-3356907">복사</button></div>
-        <p class="hint">입금자명은 꼭 <b>닉네임</b>으로 해주세요. 확인되는 대로 차례차례 보내드려요.</p>
+        <p class="hint">입금자명은 꼭 <b>닉네임</b>으로 해주세요. 확인되는 대로 차례차례 보내드려요.<span class="leadDone"></span></p>
       </div>
       <div id="dCard" hidden>
         <a class="btn btn-dark" id="payBtn" href="#" style="margin-top:6px">결제창 여는 중…</a>
         <p class="hint err" id="payFail" hidden></p>
         <p class="hint">결제창이 안 뜨면 이 페이지에 다시 들어오시면 '이어서 결제하기'가 떠요. 계좌이체로 바꾸셔도 괜찮아요.</p>
       </div>
-      <div id="dPaid" hidden><p class="hint ok" style="text-align:center">결제 확인 완료! 예쁘게 챙겨서 보내드릴게요 🤎</p></div>
+      <div id="dPaid" hidden><p class="hint ok" style="text-align:center">결제 확인 완료! 예쁘게 챙겨서 보내드릴게요 🤎<span class="leadDone"></span></p></div>
       <button class="btn btn-primary" id="again" style="margin-top:16px">➕ 다른 상품 더 주문하기</button>
       <p class="hint" style="text-align:center">오늘 또 주문하시면 배송비 없이 <b>합배송</b>으로 보내드려요.</p>
     </div>
@@ -311,6 +312,7 @@ const CONFIG = {
   AGREE: "교환·반품 불가 규정 동의",
   LIVE_N: 6,                      // '방금 소개된 상품' 개수 (최근 등록순)
   MAX_QTY: 20,
+  LEAD_WEEKS: 2,                  // 출고 소요(주). 0 이면 기존 "다음 주에 바로 출고" 안내
 };
 
 const $ = id => document.getElementById(id);
@@ -628,7 +630,7 @@ $("submit").onclick = async () => {
           (free.length ? "[직접입력 확인필요: " + free.map(m => codeLabel(m.code) + " " + won(m.price)).join(" / ") + "]" : "") +
           " " + $("cReq").value.trim()).trim(),
     items: CART.map(itemText).join(", ") + (addl ? " [추가주문]" : ""),
-    goods, ship, vat, total, agree: CONFIG.AGREE, pay: PAY, oid: curOid,
+    goods, ship, vat, total, agree: CONFIG.AGREE + (CONFIG.LEAD_WEEKS ? ` · 출고 약 ${CONFIG.LEAD_WEEKS}주 안내 확인` : ""), pay: PAY, oid: curOid,
     replace: prev && prev.oid && !$("pendNote").hidden ? prev.oid : "",   // 되살린 미결제 카드주문은 서버가 '대체됨' 처리
     cat: CONFIG.CAT,
   };
@@ -716,6 +718,16 @@ renderCart();
 loadCat(true).catch(() => {});
 setInterval(liveTick, CAT_TTL);
 document.addEventListener("visibilitychange", () => { if(!document.hidden) liveTick(); });
+
+/* 출고 소요 안내 (CONFIG.LEAD_WEEKS) */
+(function applyLead(){
+  const w = CONFIG.LEAD_WEEKS; if(!w) return;
+  $("domNote").innerHTML = `🚚 오늘 주문 상품은 <b>출고까지 약 ${w}주</b> 걸려요.<br>순서대로 꼼꼼히 챙겨서 보내드릴게요.`;
+  document.querySelectorAll(".leadAg").forEach(e => e.innerHTML = ` · <b>출고 약 ${w}주</b>`);
+  document.querySelectorAll(".leadDone").forEach(e => e.innerHTML = `<br>오늘 주문은 <b>출고까지 약 ${w}주</b> 걸려요.`);
+  $("leadPol").innerHTML = `오늘 방송 상품은 주문 후 <b>출고까지 약 ${w}주</b> 소요됩니다.`;
+  $("leadPol").hidden = false;
+})();
 
 (async function loadCustoms(){
   try{ const j = await api("ylccfg"); CUSTOMS = !!(j && j.ok && j.customs); }catch(e){ CUSTOMS = false; }
