@@ -159,6 +159,11 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
     <div class="notice" id="intlNote" hidden style="border-color:#C9D8EA;background:#F1F6FB;color:#2d4f7c;">✈️ <b>오늘은 해외배송 상품</b>이라 받아보시기까지 <b>약 2주</b> 걸려요.<br>오늘 주문은 <b>모두 무료배송</b>이에요.</div>
     <div class="notice" id="domNote" style="border-color:#D6E4CF;background:#F3F8EF;color:#3d5a2c;">🚚 오늘 주문은 <b>다음 주에 바로 출고</b>돼요.</div>
 
+    <div class="notice" style="border-color:var(--line);background:#fff;color:inherit;">💰 <b>입금 계좌</b>
+      <div class="acct"><div><div class="num">3333-18-3356907</div><div class="bank">카카오뱅크 · 김푸름 · 입금자명은 <b>닉네임</b></div></div>
+          <button class="btn-sm" style="padding:9px 12px" data-copy="3333-18-3356907">복사</button></div>
+    </div>
+
     <div class="card">
       <div class="sec">① 상품 담기</div>
       <div class="line2"><input type="text" id="aq" placeholder="방송에서 부른 번호  예) 44" autocomplete="off" enterkeyhint="search">
@@ -245,6 +250,10 @@ footer{text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lette
       <div class="choice two">
         <button class="on" data-p="계좌이체"><small>계좌이체</small><b>닉네임으로 입금</b></button>
         <button data-p="카드"><small>카드결제</small><b id="vatLbl">부가세 10%</b></button>
+      </div>
+      <div id="payAcct">
+        <div class="acct"><div><div class="num">3333-18-3356907</div><div class="bank">카카오뱅크 · 김푸름 · 입금자명은 <b>닉네임</b></div></div>
+          <button class="btn-sm" style="padding:9px 12px" data-copy="3333-18-3356907">복사</button></div>
       </div>
 
       <div class="sum">
@@ -538,6 +547,7 @@ function calc(){
   const ship = shipFee(goods), vat = vatOf(goods);
   $("sGoods").textContent = won(goods); $("sShip").textContent = won(ship);
   $("vatRow").hidden = !vat; $("sVat").textContent = won(vat);
+  $("payAcct").hidden = PAY !== "계좌이체";
   $("sTotLbl").textContent = PAY==="카드" ? "결제하실 금액" : "입금하실 금액";
   $("sTot").textContent = won(goods + ship + vat);
   const btn = $("submit");
