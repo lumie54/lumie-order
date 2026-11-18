@@ -166,7 +166,7 @@ button{font-family:inherit;color:inherit;}
    ================================================================ */
 const CONFIG = {
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
-  IMG_BASE: "images/shoes1015/",
+  IMG_BASE: "images/shoes1118/",
   POLL_MS: 8000,
 };
 const $ = id => document.getElementById(id);
@@ -295,7 +295,7 @@ function render(flashKey){
   // 왼쪽 상품 목록
   $("rail").innerHTML = D.items.map(p => {
     const s = productSummary(p);
-    const nm = p.name.replace(/\s*초특가$/, "");
+    const nm = p.name.replace(/\s*(초특가|프로모션)$/, "");
     return `<button class="pbtn${p.num===cur && view==="one"?' on':''}" onclick="go(${p.num})"><span class="n">${p.num}</span><span class="t"><span class="nm">${esc(nm)}</span><span class="lf">남은 ${s.left}</span></span>${s.flag?`<span class="flag ${s.flag}"></span>`:''}</button>`;
   }).join("");
   // 가운데
@@ -304,7 +304,7 @@ function render(flashKey){
 }
 function renderOne(flashKey){
   const p = findP(cur); if(!p) return "";
-  const sale = /\s*초특가$/.test(p.name), nm = p.name.replace(/\s*초특가$/, "");
+  const sale = (String(p.name).match(/\s*(초특가|프로모션)$/) || [])[1] || "", nm = p.name.replace(/\s*(초특가|프로모션)$/, "");
   const cols = D.sizes.length;
   let g = `<div class="grid" style="grid-template-columns:96px repeat(${cols},minmax(0,1fr));"><div></div>` + D.sizes.map(z => `<div class="gh">${z}</div>`).join("");
   p.colors.forEach(c => {
@@ -322,13 +322,13 @@ function renderOne(flashKey){
   g += "</div>";
   const idx = D.items.indexOf(p);
   return `<div class="phead"><img src="${CONFIG.IMG_BASE}${p.num}.jpg" onerror="this.style.visibility='hidden'" alt="">
-      <div><span class="num">${p.num}번</span>${sale?'<span class="sale">초특가</span>':''}<div class="nm">${esc(nm)}</div><div class="pr">${Number(p.price).toLocaleString("ko-KR")}원</div></div>
+      <div><span class="num">${p.num}번</span>${sale?'<span class="sale">'+sale+'</span>':''}<div class="nm">${esc(nm)}</div><div class="pr">${Number(p.price).toLocaleString("ko-KR")}원</div></div>
       <div class="navbtns"><button onclick="go(${idx>0?D.items[idx-1].num:p.num})">▲</button><button onclick="go(${idx<D.items.length-1?D.items[idx+1].num:p.num})">▼</button></div></div>` + g +
     `<div class="legend"><span style="background:var(--warn-bg);color:var(--warn)">1개 남음</span><span style="background:var(--full-bg);color:var(--full)">마감</span><span style="background:var(--over-bg);color:var(--over)">초과</span><span>큰 숫자 = 남은 수량 · 작은 글씨 = 내가 누른 수 · 주문서 수 (다르면 빨간 글씨)</span></div>`;
 }
 function renderAll(){
   return '<div class="ov">' + D.items.map(p => {
-    const nm = p.name.replace(/\s*초특가$/, "");
+    const nm = p.name.replace(/\s*(초특가|프로모션)$/, "");
     let t = `<table><tr><th style="width:62px"></th>${D.sizes.map(z=>`<th>${z}</th>`).join("")}</tr>`;
     p.colors.forEach(c => {
       t += `<tr><td class="c">${esc(c.color)}</td>` + D.sizes.map(z => {

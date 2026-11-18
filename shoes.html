@@ -276,13 +276,13 @@ body.hasbar #screenOrder{padding-bottom:84px;}
       </div>
       <div class="notice-block" style="background:#FBF3F1;border:1.5px solid #E7C8C0;">
         <div class="nb-title" style="color:var(--danger);">📦 배송 안내 (필독)</div>
-        <p><b>금주 내 순차 출고</b>됩니다.<br>여유 있게 기다려주시면 예쁜 상품으로 보답하겠습니다 🥰 🙏</p>
+        <p><b>금요일 (11/20) 출고</b>됩니다.<br>여유 있게 기다려주시면 예쁜 상품으로 보답하겠습니다 🥰 🙏</p>
       </div>
 
       <div class="notice-block">
         <div class="nb-title">🔎 상품 찾는 법</div>
-        <p>방송에서 안내한 <b>번호</b>(예: 7)를 검색 → <b>컬러</b> → <b>사이즈</b>를 눌러 담아주세요.</p>
-        <p>재고는 방송에서 <b>실시간으로 안내</b>해드려요. 마감된 색상 · 사이즈로 들어온 주문은 취소될 수 있어요.</p>
+        <p>방송에서 안내한 <b>번호</b>(예: 7)를 검색 → <b>컬러</b> → <b>사이즈</b>를 누르면 사이즈별 <b>남은 수량</b>이 실시간으로 보여요.</p>
+        <p>품절된 컬러 · 사이즈는 선택이 안 돼요. 주문하는 순간 남은 수량을 한 번 더 확인해요.</p>
         <p>수령 후 사이즈 미스 · 착화감으로 인한 교환·환불은 불가합니다.</p>
       </div>
       <div class="notice-block" style="border:1.5px dashed var(--accent);">
@@ -589,7 +589,7 @@ const CONFIG = {
   // 구글시트 연동용 Apps Script 웹앱 URL (라릴라와 동일한 배포 주소)
   SHEET_URL: "https://script.google.com/macros/s/AKfycbypIdAUuQc6P793mJFNderKR2ymg_kFJniK6cOR-M3M9ej1Nj34TeaeFNML5tRGpUFU/exec",
   // 상품사진 폴더 (시트 '사진' 칸이 비면 이 폴더의 {번호}.jpg)
-  IMG_BASE: "images/shoes1015/",
+  IMG_BASE: "images/shoes1118/",
   // 이 금액(원) 이상 구매 시 무료배송
   FREE_SHIP_MIN: 150000,
   // 카드결제 시 상품금액에 붙는 부가세 비율 (0.10 = 10%, 0 이면 안 붙음)
@@ -600,7 +600,7 @@ const CONFIG = {
 };
 
 /* ================================================================
-   ★ 신발 주문서 (재고 표시 없음 — 방송에서 실시간 안내) · 호명 특가상품(이름) · 주문 후 사이즈/컬러 변경
+   ★ 신발 주문서 (실시간 재고 — 남은 수량 표시·품절 차단·주문 직전 재확인) · 호명 특가상품(이름) · 주문 후 사이즈/컬러 변경
    ================================================================ */
 let cart = [];
 let submitting = false;
@@ -755,12 +755,15 @@ function inCart(num, color, size){
   return cart.filter(c => c.kind === "shoe" && String(c.num) === String(num) && nkey(c.color) === nkey(color) && c.size === size)
              .reduce((s,c)=>s+c.qty,0);
 }
-/* 재고는 주문서에서 막지 않음 (방송에서 실시간 안내) — 컬러만 있으면 모든 사이즈 가능 */
+/* 실시간 재고 — 서버 남은 수량(left) − 내 장바구니. 한 줄 최대 10켤레 */
 const MAX_QTY = 10;
+const SALE_RE = /\s*(초특가|프로모션)$/;
+const saleTag = n => { const m = String(n).match(SALE_RE); return m ? m[1] : ""; };
+const pnameOf = n => String(n).replace(SALE_RE, "");
 function leftOf(p, color, size){
   const c = p.colors.find(x => nkey(x.color) === nkey(color));
   if(!c) return 0;
-  return 99;
+  return Math.max(0, (Number(c.left && c.left[size]) || 0) - inCart(p.num, color, size));
 }
 function colorLeft(p, color){ return SIZES.reduce((s,z)=>s+leftOf(p, color, z), 0); }
 function prodLeft(p){ return p.colors.reduce((s,c)=>s+colorLeft(p, c.color), 0); }
@@ -777,19 +780,21 @@ function matchQuery(p, q){
 function itemHtml(p){
   const i = p.num;
   if(!pick[i] && p.colors.length === 1) pick[i] = p.colors[0].color;
-  const out = false;
-  const sale = /\s*초특가$/.test(p.name), pname = p.name.replace(/\s*초특가$/, "");
+  const out = prodLeft(p) <= 0;
+  const sale = saleTag(p.name), pname = pnameOf(p.name);
   const color = pick[i] || "";
   const chips = p.colors.map(c => {
-    return `<button class="chip${nkey(color)===nkey(c.color)?' on':''}" onclick="setColor(${i}, '${esc(c.color).replace(/'/g,"\\'")}')">${esc(c.color)}</button>`;
+    const l = colorLeft(p, c.color);
+    return `<button class="chip${nkey(color)===nkey(c.color)?' on':''}" ${l<=0?'disabled':''} onclick="setColor(${i}, '${esc(c.color).replace(/'/g,"\\'")}')">${esc(c.color)}${l<=0?' 품절':''}</button>`;
   }).join("");
   let sizes = "";
   if(color){
     sizes = '<div class="szgrid">' + SIZES.map(z => {
-      return `<button class="sz${sizePick[i]===z?' on':''}" onclick="setSize(${i}, '${z}')"><b>${z}</b></button>`;
+      const l = leftOf(p, color, z);
+      return `<button class="sz${sizePick[i]===z?' on':''}" ${l<=0?'disabled':''} onclick="setSize(${i}, '${z}')"><b>${z}</b><small class="${l>0&&l<=2?'low':''}">${l<=0?'품절':l<=2?'마지막 '+l+'개':'남은 '+l+'개'}</small></button>`;
     }).join("") + '</div>';
   }else{
-    sizes = '<p class="pickhint">👆 컬러를 먼저 고르면 사이즈가 나와요</p>';
+    sizes = '<p class="pickhint">👆 컬러를 먼저 고르면 사이즈별 남은 수량이 보여요</p>';
   }
   const q = qty[i] || 1;
   let btnTxt = "🛒 담기 · " + fmt(p.price * q), dis = false;
@@ -801,7 +806,7 @@ function itemHtml(p){
       <div style="display:flex;gap:12px;align-items:center;">
       <div class="thumb" onclick="viewImg('${esc(imgSrc(p))}')"><img src="${esc(imgSrc(p))}" loading="lazy" alt="" onerror="this.style.display='none'"></div>
       <div class="body">
-        <div class="code"><span class="numchip">${esc(p.num)}번</span>${sale ? '<span class="badge b-out">초특가</span>' : ''}</div>
+        <div class="code"><span class="numchip">${esc(p.num)}번</span>${out ? '<span class="badge b-out">품절</span>' : sale ? '<span class="badge b-out">' + sale + '</span>' : ''}</div>
         <div class="nm">${esc(pname)}</div>
         <div class="pr"><span class="now">${fmt(p.price)}</span></div>
       </div>
@@ -842,6 +847,8 @@ function setSize(i, z){ sizePick[i] = z; qty[i] = 1; redraw(i); }
 function chgQty(i, d){
   const p = findP(i);
   const n = (qty[i] || 1) + d;
+  const max = (pick[i] && sizePick[i]) ? leftOf(p, pick[i], sizePick[i]) : MAX_QTY;
+  if(d > 0 && n > max){ alert("남은 수량이 " + max + "개예요."); return; }
   if(n > MAX_QTY){ alert("한 번에 " + MAX_QTY + "켤레까지 담을 수 있어요."); return; }
   qty[i] = Math.max(1, n);
   redraw(i);
@@ -877,8 +884,10 @@ let pendingAdd = null;
 function askAdd(i){
   const p = findP(i), color = pick[i], size = sizePick[i], q = qty[i] || 1;
   if(!p || !color || !size) return;
+  const l = leftOf(p, color, size);
+  if(l < q){ alert(l <= 0 ? "방금 품절됐어요." : "남은 수량이 " + l + "개예요."); qty[i] = 1; if(l <= 0) sizePick[i] = ""; redraw(i); return; }
   pendingAdd = { kind:"shoe", p, color, size, q };
-  $("mTitle").textContent = p.num + "번 " + p.name.replace(/\s*초특가$/, "");
+  $("mTitle").textContent = p.num + "번 " + p.name.replace(SALE_RE, "");
   $("mColor").textContent = color;
   $("mSize").textContent = size;
   $("mQty").textContent = q + "켤레 · " + fmt(p.price * q);
@@ -981,7 +990,9 @@ function openChg(oi, idx){
 function chgLeft(color, size){
   const t = chgTarget;
   const c = t.p.colors.find(x => nkey(x.color) === nkey(color));
-  return c ? 99 : 0;
+  let l = c ? (Number(c.left && c.left[size]) || 0) : 0;
+  if(nkey(color) === nkey(t.l.color) && size === t.l.size) l += t.l.qty;
+  return l;
 }
 function renderChg(){
   const t = chgTarget;
@@ -993,7 +1004,7 @@ function renderChg(){
   }).join("");
   $("cSizes").innerHTML = SIZES.map(z => {
     const l = chgLeft(chgColor, z), ok = l >= t.l.qty;
-    return `<button class="sz${chgSize===z?' on':''}" ${ok?'':'disabled'} onclick="chgSize='${z}';renderChg()"><b>${z}</b><small>${ok?'':'없음'}</small></button>`;
+    return `<button class="sz${chgSize===z?' on':''}" ${ok?'':'disabled'} onclick="chgSize='${z}';renderChg()"><b>${z}</b><small>${ok?'가능':'품절'}</small></button>`;
   }).join("");
   const same = nkey(chgColor) === nkey(t.l.color) && chgSize === t.l.size;
   $("cGo").disabled = !chgSize || same;
@@ -1047,6 +1058,10 @@ function cartQty(i, d){
   const next = c.qty + d;
   if(d > 0 && c.kind === "one"){ alert("특가상품은 1켤레만 주문할 수 있어요."); return; }
   if(d > 0 && c.kind === "shoe" && next > MAX_QTY){ alert("한 번에 " + MAX_QTY + "켤레까지 담을 수 있어요."); return; }
+  if(d > 0 && c.kind === "shoe"){
+    const p = findP(c.num);
+    if(p && leftOf(p, c.color, c.size) < 1){ alert(c.color + " " + c.size + " 은(는) 남은 수량이 없어요."); return; }
+  }
   if(next < 1){
     if(!confirm("수량이 0이 됩니다.\n주문 목록에서 삭제할까요?")) return;
     cart.splice(i,1);
@@ -1087,7 +1102,7 @@ function renderCart(){
       return `
       <div class="cart-item">
         <div style="flex:1;">
-          <div class="ci-name">${c.kind === "one" ? "<span class=\"tag1\">호명 특가</span>" + esc(c.name) + "님" : (c.code ? "<span class=\"numchip\">" + esc(c.code) + "</span>" : "") + esc(c.name.replace(/\s*초특가$/, ""))}</div>
+          <div class="ci-name">${c.kind === "one" ? "<span class=\"tag1\">호명 특가</span>" + esc(c.name) + "님" : (c.code ? "<span class=\"numchip\">" + esc(c.code) + "</span>" : "") + esc(c.name.replace(SALE_RE, ""))}</div>
           <div class="ci-opt"><b style="color:var(--ink);font-size:14px;">${esc(opt)}</b> · ${fmt(c.price)} × ${c.qty}켤레</div>
           <div class="ci-qty">
             <button class="qb" onclick="cartQty(${i},-1)">−</button>
@@ -1206,8 +1221,38 @@ async function submitOrder(){
     if(!confirm("배송비가 '추가 주문 (배송비 없음)'으로 선택되어 있습니다.\n오늘 이미 주문하신 경우에만 해당됩니다.\n\n이대로 주문할까요?")) return;
   }
   submitting = true;
+  // 재고 최종 확인 — 주문 직전 캐시 없이 최신 재고를 다시 받아서 부족하면 막음
+  if(cart.some(c => c.kind === "shoe") && CONFIG.SHEET_URL){
+    $("loading").classList.add("show");
+    let fresh = null;
+    try{
+      const r = await fetch(CONFIG.SHEET_URL + "?mode=shoes&fresh=1&t=" + Date.now());
+      const j = await r.json();
+      if(j && j.ok && Array.isArray(j.items)) fresh = j.items;
+    }catch(e){}
+    $("loading").classList.remove("show");
+    if(!fresh){ alert("재고 확인에 실패했어요. 잠시 후 다시 주문해주세요."); submitting = false; return; }
+    PRODUCTS = fresh;
+    const short = [], need = {};
+    cart.filter(c => c.kind === "shoe").forEach(c => { const k = c.num + "|" + nkey(c.color) + "|" + c.size; need[k] = (need[k] || 0) + c.qty; });
+    Object.keys(need).forEach(k => {
+      const [n, col, z] = k.split("|");
+      const p = findP(n); const cc = p && p.colors.find(x => nkey(x.color) === col);
+      const left = cc ? (Number(cc.left && cc.left[z]) || 0) : 0;
+      if(need[k] > left){
+        const c = cart.find(x => x.kind === "shoe" && String(x.num) === n && nkey(x.color) === col && x.size === z);
+        short.push("· " + n + "번 " + c.color + " / " + z + " — 남은 " + left + "개 (담은 " + need[k] + "개)");
+        if(left <= 0) cart.splice(cart.indexOf(c), 1); else c.qty = left;
+      }
+    });
+    if(short.length){
+      saveCart(); renderCart(); refreshVisible();
+      alert("그 사이 다른 분이 먼저 주문해서 재고가 부족해요.\n\n" + short.join("\n") + "\n\n주문 목록을 남은 수량에 맞게 고쳤어요. 확인 후 다시 주문해주세요.");
+      submitting = false; return;
+    }
+  }
   // 사이즈 최종 확인
-  const szList = cart.map(c => "· " + (c.kind === "one" ? "특가 (" + c.name + "님)" : c.num + "번 " + c.name.replace(/\s*초특가$/, "")) + "  ▶ " + (c.color ? c.color + " / " : "") + c.size + (c.qty > 1 ? " ×" + c.qty : "")).join("\n");
+  const szList = cart.map(c => "· " + (c.kind === "one" ? "특가 (" + c.name + "님)" : c.num + "번 " + c.name.replace(SALE_RE, "")) + "  ▶ " + (c.color ? c.color + " / " : "") + c.size + (c.qty > 1 ? " ×" + c.qty : "")).join("\n");
   if(!confirm("사이즈 · 컬러 최종 확인\n\n" + szList + "\n\n※ 방송 중 댓글로 호명된 색상·사이즈만 주문 가능합니다.\n※ 신발은 단순변심·착화감·사이즈 미스·미세 하자로 교환·환불이 불가합니다.\n\n맞으면 [확인]을 눌러 주문해주세요.")){ submitting = false; return; }
   saveCustomer();
 
