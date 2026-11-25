@@ -114,7 +114,7 @@ button{font-family:inherit;cursor:pointer;}
           <button class="b-push" id="btnPush" onclick="pushTyped()">▶ 띄우기</button>
           <button class="b-next" onclick="step(1)">다음 ▶</button>
         </div>
-        <p class="hint">이전 · 다음은 지금 떠 있는 번호 기준으로 바로 앞 · 뒤 상품을 <b>바로 띄워요</b>. 품절 상품은 건너뛰어요.<br>키보드로도 돼요: 숫자 → Enter 띄우기 · ←/→ 이전/다음 · Esc 지우기</p>
+        <p class="hint">💡 이름 · 가격은 <b>시트(만수르창고 탭)에서 고치면</b> 1분 안에 고객 화면에 반영돼요. 이미 띄운 상품도 같이 바뀌어요.<br>이전 · 다음은 지금 떠 있는 번호 기준으로 바로 앞 · 뒤 상품을 <b>바로 띄워요</b>. 품절 상품은 건너뛰어요.<br>키보드로도 돼요: 숫자 → Enter 띄우기 · ←/→ 이전/다음 · Esc 지우기</p>
       </div>
     </div>
 
@@ -207,8 +207,8 @@ function curNo(){ return LIVE[0] ? Number(LIVE[0].no) : 0; }
 function renderNow(){
   const n = curNo(), p = BYNO[n];
   if(!n){ $("nowBox").innerHTML = '<div class="empty">아직 띄운 상품이 없어요</div>'; return; }
-  const nm = (LIVE[0].name || (p && p.name) || (n + "번"));
-  const pr = LIVE[0].price || (p && p.price) || 0;
+  const nm = (p && p.name) || LIVE[0].name || (n + "번");
+  const pr = (p && p.price) || LIVE[0].price || 0;
   const sold = p && p.soldout;
   $("nowBox").innerHTML = `
     <div class="now">${img(p)}
@@ -220,7 +220,7 @@ function renderNow(){
     </div>
     <div class="nowbtns">
       <button class="bsold ${sold ? "on" : ""}" onclick="toggleSold(${n})">${sold ? "✅ 품절 해제" : "⛔ 품절 처리"}</button>
-      <button onclick="editPrice(${n})">✏️ 가격 바꿔 다시 띄우기</button>
+      <button onclick="push(${n})">🔄 다시 맨 위로</button>
     </div>`;
 }
 function renderTyped(){
@@ -369,7 +369,7 @@ keepAwake();
 if(!pin()) $("pinBox").classList.add("show");
 loadCatalog().then(() => loadLive(true));
 setInterval(loadLive, CONFIG.POLL_MS);
-setInterval(loadCatalog, 60000);
+setInterval(loadCatalog, 20000);
 </script>
 </body>
 </html>

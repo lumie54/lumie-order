@@ -718,13 +718,8 @@ async function loadLive(){
         if(p.left !== nv){ p.left = nv; changed = true; }
       });
     }
-    // 띄우면서 입력한 품명·가격을 바로 반영 (전체 상품 갱신 전이라도)
-    LIVE.forEach(l => {
-      const p = BYNO[l.no];
-      if(!p) return;
-      if(l.name && p.name !== l.name){ p.name = l.name; changed = true; }
-      if(l.price && p.price !== l.price){ p.price = l.price; changed = true; }
-    });
+    // 품명·가격은 시트(만수르창고 탭)가 기준 — 띄울 때 저장된 값으로 덮어쓰지 않음
+    // (방송 중 시트에서 고친 이름·가격이 이미 띄운 상품에도 반영되도록, 11/25)
     renderLive();
     if(changed) renderSearch(false);
   }catch(e){ console.error("방송노출 불러오기 실패", e); }
