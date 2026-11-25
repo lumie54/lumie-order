@@ -245,6 +245,11 @@ footer{ text-align:center;color:var(--sub);font-size:11.5px;margin-top:28px;lett
 .payopt-item input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;}
 .payopt-item span{font-weight:700;font-size:14.5px;line-height:1.3;}
 .payopt-item small{display:block;font-weight:500;font-size:11.5px;color:var(--sub);margin-top:2px;}
+.optbox{margin-top:9px;}
+.optbox .ol{font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:5px;}
+.optbox .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.optbox .chip{border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:7px 11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink);}
+.optbox .chip.on{border-color:var(--accent);background:var(--accent);color:#fff;}
 .pitem .soldtag{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;background:#EDE7DE;color:var(--sub);margin-top:6px;}
 #pendingTop{display:none;position:sticky;top:0;z-index:40;background:#B3402E;color:#fff;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:14px;line-height:1.55;box-shadow:0 4px 14px rgba(0,0,0,.15);}
 #pendingTop b{color:#fff;}
@@ -637,6 +642,20 @@ let loaded = false;
 let lastCatalog = "", lastLive = "";
 let shown = 20;
 const qty = {};          // qty[no]
+let OPTS = {};           // 옵션 상품 {no: {label, values[]}} — mansour_opts.json
+const selOpt = {};       // 고른 옵션 selOpt[no]
+fetch("mansour_opts.json?t=" + Date.now()).then(r => r.ok ? r.json() : {}).then(j => { OPTS = j || {}; renderLive(); renderSearch(false); }).catch(()=>{});
+function pickOpt(no, i){
+  const o = OPTS[no]; if(!o) return;
+  selOpt[no] = o.values[i];
+  document.querySelectorAll(".optbox[data-no='" + no + "'] .chip").forEach((el, k) => el.classList.toggle("on", k === i));
+}
+function optHtml(no){
+  const o = OPTS[no]; if(!o || !o.values || !o.values.length) return "";
+  return `<div class="optbox" data-no="${no}"><div class="ol">${o.label || "옵션"} 선택</div><div class="chips">` +
+    o.values.map((v, i) => `<button type="button" class="chip ${selOpt[no] === v ? "on" : ""}" onclick="pickOpt(${no},${i})">${v}</button>`).join("") +
+    `</div></div>`;
+}
 
 // 페이지 열리자마자 전체 상품을 미리 받아둠 (안내 읽는 동안 로딩 끝나도록)
 async function loadCatalog(){
@@ -746,6 +765,7 @@ function cardHtml(p, badge){
           ${gone ? '<span class="soldtag">판매종료</span>' : leftTag}
         </div>
       </div>
+      ${gone ? "" : optHtml(no)}
       <div class="act">
         <button class="qb" onclick="chgQty(${no},-1)">−</button>
         <span class="qv" data-no="${no}">${qty[no] || 1}</span>
@@ -805,18 +825,21 @@ function addItem(no){
   if(isGone(p)){ alert("판매가 종료된 상품입니다."); return; }
   const q = qty[no] || 1;
   const name = dispName(p).replace(/,/g, "·");   // 주문내역 구분자(,)와 겹치지 않게
-  const same = cart.find(x => x.name === name);
+  const o = OPTS[no];
+  const opt = o ? (selOpt[no] || "") : "";
+  if(o && !opt){ alert((o.label || "옵션") + "을(를) 먼저 골라주세요."); const el = document.querySelector(".optbox[data-no='" + no + "']"); if(el) el.scrollIntoView({behavior:"smooth", block:"center"}); return; }
+  const same = cart.find(x => x.name === name && (x.opt || "") === opt);
   const inCart = same ? same.qty : 0;
   if(leftOf(p) < inCart + q){
     alert("남은 수량이 " + leftOf(p) + "개예요." + (inCart ? "\n(이미 " + inCart + "개 담겨 있어요)" : "")); return;
   }
   if(same){
-    if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + name + "\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
+    if(!confirm("이미 담겨 있는 상품입니다.\n수량을 추가하시겠습니까?\n\n" + name + (opt ? " (" + opt + ")" : "") + "\n현재 " + same.qty + "개 → " + (same.qty + q) + "개")) return;
     same.qty += q;
   }else{
-    if(!confirm("아래 상품을 담을까요?\n\n" + name + "\n" +
+    if(!confirm("아래 상품을 담을까요?\n\n" + name + (opt ? "\n옵션: " + opt : "") + "\n" +
                 p.price.toLocaleString() + "원 × " + q + "개 = " + (p.price*q).toLocaleString() + "원")) return;
-    cart.push({ name: name, price: p.price, opt: "", qty: q });
+    cart.push({ name: name, price: p.price, opt: opt, qty: q });
   }
   qty[no] = 1;
   document.querySelectorAll(".qv[data-no='" + no + "']").forEach(el => el.textContent = 1);
@@ -1002,7 +1025,7 @@ async function submitOrder(){
     addr: ($("cAddr").value + " " + $("cAddr2").value).trim(),
     memo: $("cMemo").value.trim(),
     req: $("cReq").value.trim(),
-    items: cart.map(c=>`${c.name}x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
+    items: cart.map(c=>`${c.name}${c.opt ? "(" + c.opt + ")" : ""}x${c.qty}`).join(", ") + (isAddl() ? " [추가주문]" : ""),
     goods: goodsTotal(),
     ship: shipFee(),
     vat: cardVat(),                 // 카드 부가세 (계좌이체면 0)
